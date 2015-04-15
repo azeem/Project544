@@ -1,0 +1,10 @@
+INFO:root:CREATE TABLE IF NOT EXISTS [Votes](CreationDate DATETIME, VoteTypeId INTEGER, UserId INTEGER, BountyAmount INTEGER, PostId INTEGER, Id INTEGER)
+WARNING:root:near ")": syntax error
+INFO:root:CREATE TABLE IF NOT EXISTS [Posts](Body TEXT, ViewCount INTEGER, LastEditorDisplayName TEXT, ClosedDate DATETIME, CommunityOwnedDate DATETIME, LastEditorUserId INTEGER, ParentID INTEGER, LastEditDate DATETIME, CommentCount INTEGER, AnswerCount INTEGER, AcceptedAnswerId INTEGER, Score INTEGER, OwnerDisplayName TEXT, Title TEXT, PostTypeId INTEGER, OwnerUserId INTEGER, Tags TEXT, CreationDate DATETIME, FavoriteCount INTEGER, Id INTEGER, LastActivityDate DATETIME)
+WARNING:root:near ")": syntax error
+INFO:root:CREATE TABLE IF NOT EXISTS [Comments](CreationDate DATETIME, UserDisplayName TEXT, Text TEXT, UserId INTEGER, Score INTEGER, PostId INTEGER, Id INTEGER)
+WARNING:root:near ")": syntax error
+INFO:root:CREATE TABLE IF NOT EXISTS [Badges](Date DATETIME, UserId INTEGER, Id INTEGER, Name TEXT)
+WARNING:root:near ")": syntax error
+INFO:root:CREATE TABLE IF NOT EXISTS [Users](DownVotes INTEGER, DisplayName TEXT, Age INTEGER, WebsiteUrl TEXT, EmailHash TEXT, Reputation INTEGER, Location TEXT, Views INTEGER, AboutMe TEXT, LastAccessDate DATETIME, ProfileImageUrl TEXT, UpVotes INTEGER, CreationDate DATETIME, Id INTEGER, AccountId INTEGER)
+WARNING:root:near ")": syntax error
