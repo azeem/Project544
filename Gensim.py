@@ -90,27 +90,32 @@ class Gensim:
         corpus = [self.dictionary.doc2bow(text) for text in texts]
         corpora.MmCorpus.serialize(answercorpusfile, corpus)
 
-    def TopicModelLdaMallet(self, corpusfile, modelfile = Config.QUESTION_MODEL, indexfile = Config.QUESTION_INDEX):
+    def CreateQuestionTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.QUESTIONS, modelfile=Config.QUESTION_MODEL, indexfile=Config.QUESTION_INDEX):
 
         if(self.dictionary == None):
             self.LoadDictionary()
 
         corpus = corpora.MmCorpus(corpusfile)
-        lda = models.wrappers.LdaMallet(Config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics = Config.num_topics_lda)
-        lda.save(modelfile)
 
-        index = similarities.MatrixSimilarity(lda[corpus])
-        index.save(indexfile)
+        if(method=='lda_mallet'):
+            lda = models.wrappers.LdaMallet(Config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics = Config.num_topics_lda)
+            lda.save(modelfile)
+            index = similarities.MatrixSimilarity(lda[corpus])
+            index.save(indexfile)
 
-    def FindSimilarQuestions(self, question, modelfile = Config.QUESTION_MODEL, indexfile = Config.QUESTION_INDEX):
+    def FindSimilarQuestions(self, question, method=Config.TOPICMODEL_METHOD, modelfile=Config.QUESTION_MODEL, indexfile=Config.QUESTION_INDEX):
 
         if(self.dictionary == None):
             self.LoadDictionary()
 
-        question_bow = self.dictionary.doc2bow(question.lower().split())
-        lda_model = models.wrappers.LdaMallet.load(modelfile)
-        question_model = lda_model[question_bow]
-        index = similarities.MatrixSimilarity.load(indexfile)
+        questiontext = self.PreprocessDocuments([self.PreprocessPostContent(question)])
+        question_bow = self.dictionary.doc2bow(questiontext[0])
+
+        if(method=='lda_mallet'):
+            lda_model = models.wrappers.LdaMallet.load(modelfile)
+            question_model = lda_model[question_bow]
+            index = similarities.MatrixSimilarity.load(indexfile)
+
         sims = index[question_model]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
 
