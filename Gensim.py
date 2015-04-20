@@ -128,3 +128,16 @@ class Gensim:
             print(str(sim[1]) + '\t' + str(sim[0]) + '\t' + documents[sim[0]].encode('utf-8'))
             if(i > 5):
                 break
+
+    def CreateAnswerTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.ANSWERS, modelfile=Config.ANSWER_MODEL, indexfile=Config.ANSWER_INDEX):
+
+        if(self.dictionary == None):
+            self.LoadDictionary()
+
+        corpus = corpora.MmCorpus(corpusfile)
+
+        if(method=='lda_mallet'):
+            lda = models.wrappers.LdaMallet(Config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics=Config.num_topics_lda)
+            lda.save(modelfile)
+            index = similarities.MatrixSimilarity(lda[corpus])
+            index.save(indexfile)
