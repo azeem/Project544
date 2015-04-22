@@ -73,6 +73,7 @@ class Users(BaseModel):
     upvotes = IntegerField(db_column='UpVotes', null=True)
     views = IntegerField(db_column='Views', null=True)
     websiteurl = TextField(db_column='WebsiteUrl', null=True)
+    usercorpusid = IntegerField(db_column='UserCorpusId', null=True)
 
     class Meta:
         db_table = 'Users'

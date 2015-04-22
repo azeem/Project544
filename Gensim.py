@@ -1,11 +1,11 @@
 import Util
 import Config
 import pickle
-
 from Model import Posts,Users
 from collections import defaultdict
 from gensim import corpora, models, similarities
 from nltk.tokenize import word_tokenize
+
 
 class Gensim:
 
@@ -189,13 +189,16 @@ class Gensim:
     def CreateUserTopicCorpus(self, userfile=Config.USERS):
         usercorpus = []
 
+        index = 0
         for User in Users.select().limit(1000):
             user_topicmodel = self.GetUserTopicDistribution(User.id)
             if(user_topicmodel!=None):
+                User.usercorpusid = index
                 usercorpus.append(user_topicmodel)
+                index = index + 1
+                User.save()
 
         corpora.MmCorpus.serialize(userfile, usercorpus)
-
 
     def CreateUserTopicModel(self, corpusfile=Config.USERS, modelfile=Config.USER_MODEL, indexfile=Config.USER_INDEX):
 
@@ -240,3 +243,19 @@ class Gensim:
             print(str(sim[1]) + '\t' + str(sim[0]) + '\t' + documents[sim[0]].encode('utf-8'))
             if(i > 5):
                 break
+
+    def FindExperts(self, question, modelfile=Config.USER_MODEL, indexfile=Config.USER_INDEX):
+        query_model = self.GetQuestionDocumentModel(question)
+        index = similarities.MatrixSimilarity.load(indexfile)
+        sims = index[query_model]
+        sims = sorted(enumerate(sims), key=lambda item: -item[1])
+
+
+        i = 0
+        for sim in sims:
+            i = i + 1
+            user = [user for user in Users.select().where(Users.usercorpusid==sim[0])][0]
+            print user.displayname+', ' + user.location +', ' + str(user.age)
+            if(i > 5):
+                break
+        # print sims
