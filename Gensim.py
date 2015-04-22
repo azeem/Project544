@@ -2,7 +2,7 @@ import Util
 import Config
 import pickle
 
-from Model import Posts
+from Model import Posts,Users
 from collections import defaultdict
 from gensim import corpora, models, similarities
 from nltk.tokenize import word_tokenize
@@ -16,6 +16,9 @@ class Gensim:
         stoplist.close()
 
         self.dictionary = None
+        self.questionmodel = None
+        self.answermodel = None
+        self.usermodel = None
 
     def PreprocessPostContent(self, post):
         return Util.stripTags(post).replace('\n', ' ').replace('\r', ' ')
@@ -49,37 +52,17 @@ class Gensim:
 
         return answerlist
 
-    def GetUserAggregate(self, userid):
+    def GetUserAnswers(self, userid):
         doccount = 0
         aggregate = ''
 
         for Post in Posts.select().where((Posts.owneruserid==userid) & (Posts.posttypeid==2)):
-            postcontent = self.PreprocessPostContent(Post.body)
             doccount+=1
-            aggregate = aggregate + ' ' + postcontent
+            aggregate = aggregate + ' ' + Post.body
 
         return aggregate
 
-    def FindUserTopicDistribution(self, userid, method=Config.TOPICMODEL_METHOD, modelfile=Config.QUESTION_MODEL, indexfile=Config.QUESTION_INDEX):
-
-        if(self.dictionary == None):
-            self.LoadDictionary()
-
-        useraggregate = self.PreprocessDocuments([self.GetUserAggregate(userid)])
-        aggregate_bow = self.dictionary.doc2bow(useraggregate[0])
-
-        if(method=='lda_mallet'):
-            lda_model = models.wrappers.LdaMallet.load(modelfile)
-            aggregate_model = lda_model[aggregate_bow]
-        elif(method=='lda'):
-            lda_model = models.LdaModel.load(modelfile)
-            aggregate_model = lda_model[aggregate_bow]
-
-        print aggregate_model
-
-
     def CreateDictionaryFromPosts(self, dictionaryfile=Config.DICTIONARY):
-
         documents = []
         questionlist = self.GetQuestions()
         documents.extend(questionlist)
@@ -96,75 +79,138 @@ class Gensim:
 
     def CreateQuestionCorpus(self, questioncorpusfile=Config.QUESTIONS):
 
-        documents = self.GetQuestions()
-        texts = self.PreprocessDocuments(documents)
-
         if(self.dictionary == None):
             self.LoadDictionary()
 
+        questions = self.GetQuestions()
+        texts = self.PreprocessDocuments(questions)
         corpus = [self.dictionary.doc2bow(text) for text in texts]
         corpora.MmCorpus.serialize(questioncorpusfile, corpus)
 
         with open(Config.QUESTION_LIST, 'w') as fout:
-            pickle.dump(documents, fout)
+            pickle.dump(questions, fout)
 
     def CreateAnswerCorpus(self, answercorpusfile=Config.ANSWERS):
-
-        documents = self.GetAnswers()
-        texts = self.PreprocessDocuments(documents)
 
         if(self.dictionary == None):
             self.LoadDictionary()
 
+        answers = self.GetAnswers()
+        texts = self.PreprocessDocuments(answers)
         corpus = [self.dictionary.doc2bow(text) for text in texts]
         corpora.MmCorpus.serialize(answercorpusfile, corpus)
 
         with open(Config.ANSWER_LIST, 'w') as fout:
-            pickle.dump(documents, fout)
+            pickle.dump(answers, fout)
+
+    def CreateTopicModel(self, method, corpus):
+        model = None
+
+        if(method=='lda_mallet'):
+            model = models.wrappers.LdaMallet(Config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics=Config.num_topics_lda)
+        elif(method=='lda'):
+            model = models.LdaModel(corpus, ld2word=self.dictionary, num_topics=Config.num_topics_lda)
+
+        return model
 
     def CreateQuestionTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.QUESTIONS, modelfile=Config.QUESTION_MODEL, indexfile=Config.QUESTION_INDEX):
+
+        if(self.dictionary==None):
+            self.LoadDictionary()
+
+        corpus = corpora.MmCorpus(corpusfile)
+        model = self.CreateTopicModel(method, corpus)
+        index = similarities.MatrixSimilarity(model[corpus])
+
+        model.save(modelfile)
+        index.save(indexfile)
+
+    def CreateAnswerTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.ANSWERS, modelfile=Config.ANSWER_MODEL, indexfile=Config.ANSWER_INDEX):
+
+        if(self.dictionary==None):
+            self.LoadDictionary()
+
+        corpus = corpora.MmCorpus(corpusfile)
+        model = self.CreateTopicModel(method, corpus)
+        index = similarities.MatrixSimilarity(model[corpus])
+
+        model.save(modelfile)
+        index.save(indexfile)
+
+    def LoadModel(self,modelfile):
+        if(Config.TOPICMODEL_METHOD=='lda_mallet'):
+            model = models.wrappers.LdaMallet.load(modelfile)
+        elif(Config.TOPICMODEL_METHOD=='lda'):
+            model = models.LdaModel.load(modelfile)
+
+        return model
+
+    def GetDocumentModel(self, document, model):
+        if(self.dictionary == None):
+            self.LoadDictionary()
+
+        document_model = None
+        if(document!=None and len(document)>1):
+            documenttext = self.PreprocessDocuments([self.PreprocessPostContent(document)])
+            document_bow = self.dictionary.doc2bow(documenttext[0])
+            document_model = model[document_bow]
+
+        return document_model
+
+    def GetQuestionDocumentModel(self, document, modelfile=Config.QUESTION_MODEL):
+        if(self.dictionary == None):
+            self.LoadDictionary()
+
+        if(self.questionmodel==None):
+            self.questionmodel = self.LoadModel(modelfile)
+
+        document_model = self.GetDocumentModel(document, self.questionmodel)
+        return document_model
+
+    def GetAnswerDocumentModel(self, document, modelfile=Config.ANSWER_MODEL):
+        if(self.dictionary == None):
+            self.LoadDictionary()
+
+        if(self.answermodel==None):
+            self.answermodel = self.LoadModel(modelfile)
+
+        document_model = self.GetDocumentModel(document, self.answermodel)
+        return document_model
+
+    def GetUserTopicDistribution(self, userid):
+
+        if(self.dictionary == None):
+            self.LoadDictionary()
+
+        document = self.GetUserAnswers(userid)
+        user_topicdist = self.GetQuestionDocumentModel(document)
+        return user_topicdist
+
+    def CreateUserTopicCorpus(self, userfile=Config.USERS):
+        usercorpus = []
+
+        for User in Users.select().limit(1000):
+            user_topicmodel = self.GetUserTopicDistribution(User.id)
+            if(user_topicmodel!=None):
+                usercorpus.append(user_topicmodel)
+
+        corpora.MmCorpus.serialize(userfile, usercorpus)
+
+
+    def CreateUserTopicModel(self, corpusfile=Config.USERS, modelfile=Config.USER_MODEL, indexfile=Config.USER_INDEX):
 
         if(self.dictionary == None):
             self.LoadDictionary()
 
         corpus = corpora.MmCorpus(corpusfile)
-
-        if(method=='lda_mallet'):
-            model = models.wrappers.LdaMallet(Config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics = Config.num_topics_lda)
-            index = similarities.MatrixSimilarity(model[corpus])
-        elif(method=='lda'):
-            model = models.LdaModel(corpus, ld2word=self.dictionary, num_topics=Config.num_topics_lda)
-            index = similarities.MatrixSimilarity(model[corpus])
-        elif(method=='lsi'):
-            tfidf = models.TfidfModel(corpus)
-            corpus_tfidf = tfidf[corpus]
-            model = models.LsiModel(corpus_tfidf, id2word=self.dictionary, num_topics=Config.num_topics_lsi)
-            index = similarities.MatrixSimilarity(model[corpus_tfidf])
+        model = models.LsiModel(corpus, id2word=self.dictionary, num_topics=Config.num_topics_lsi)
+        index = similarities.MatrixSimilarity(model[corpus])
 
         model.save(modelfile)
         index.save(indexfile)
 
-    def GetDocumentModel(self, document, method=Config.TOPICMODEL_METHOD, modelfile=Config.QUESTION_MODEL):
-
-        if(self.dictionary == None):
-            self.LoadDictionary()
-
-        documenttext = self.PreprocessDocuments([self.PreprocessPostContent(document)])
-        document_bow = self.dictionary.doc2bow(documenttext[0])
-        document_model = None
-
-        if(method=='lda_mallet'):
-            lda_model = models.wrappers.LdaMallet.load(modelfile)
-            document_model = lda_model[document_bow]
-        elif(method=='lda'):
-            lda_model = models.LdaModel.load(modelfile)
-            document_model = lda_model[document_bow]
-
-        return document_model
-
     def FindSimilarQuestions(self, question, method=Config.TOPICMODEL_METHOD, modelfile=Config.QUESTION_MODEL, indexfile=Config.QUESTION_INDEX):
-
-        question_model = self.GetDocumentModel(question, method, modelfile)
+        question_model = self.GetQuestionDocumentModel(question, method, modelfile)
         index = similarities.MatrixSimilarity.load(indexfile)
         sims = index[question_model]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
@@ -179,22 +225,8 @@ class Gensim:
             if(i > 5):
                 break
 
-    def CreateAnswerTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.ANSWERS, modelfile=Config.ANSWER_MODEL, indexfile=Config.ANSWER_INDEX):
-
-        if(self.dictionary == None):
-            self.LoadDictionary()
-
-        corpus = corpora.MmCorpus(corpusfile)
-
-        if(method=='lda_mallet'):
-            lda = models.wrappers.LdaMallet(Config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics=Config.num_topics_lda)
-            lda.save(modelfile)
-            index = similarities.MatrixSimilarity(lda[corpus])
-            index.save(indexfile)
-
     def FindSimilarAnswers(self, question, method=Config.TOPICMODEL_METHOD, modelfile=Config.ANSWER_MODEL, indexfile=Config.ANSWER_INDEX):
-
-        question_model = self.GetDocumentModel(question, method, modelfile)
+        question_model = self.GetAnswerDocumentModel(question, method, modelfile)
         index = similarities.MatrixSimilarity.load(indexfile)
         sims = index[question_model]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])

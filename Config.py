@@ -10,6 +10,9 @@ ANSWERS             = "./Out/answers.mm"
 ANSWER_LIST         = "./Out/answer.list"
 ANSWER_MODEL        = "./Out/answers.lda"
 ANSWER_INDEX        = "./Out/answers.index"
+USERS               = "./Out/users.mm"
+USER_MODEL         = "./Out/users.lsi"
+USER_INDEX         = "./Out/users.index"
 TOPICMODEL_METHOD   = "lda_mallet"
 
 num_topics_lsi = 300
