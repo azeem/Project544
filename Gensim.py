@@ -18,6 +18,7 @@ class Gensim:
         self.dictionary = None
         self.questionmodel = None
         self.answermodel = None
+        self.combinedmodel = None
         self.usermodel = None
 
     def PreprocessPostContent(self, post):
@@ -103,6 +104,18 @@ class Gensim:
         with open(Config.ANSWER_LIST, 'w') as fout:
             pickle.dump(answers, fout)
 
+    def CreateCombinedCorpus(self, corpusfile=Config.COMBINED):
+
+        if(self.dictionary == None):
+            self.LoadDictionary()
+
+        questions = self.GetQuestions()
+        answers = self.GetAnswers()
+        combined = questions + answers
+        texts = self.PreprocessDocuments(combined)
+        corpus = [self.dictionary.doc2bow(text) for text in texts]
+        corpora.MmCorpus.serialize(corpusfile, corpus)
+
     def CreateTopicModel(self, method, corpus):
         model = None
 
@@ -114,7 +127,6 @@ class Gensim:
         return model
 
     def CreateQuestionTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.QUESTIONS, modelfile=Config.QUESTION_MODEL, indexfile=Config.QUESTION_INDEX):
-
         if(self.dictionary==None):
             self.LoadDictionary()
 
@@ -126,7 +138,17 @@ class Gensim:
         index.save(indexfile)
 
     def CreateAnswerTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.ANSWERS, modelfile=Config.ANSWER_MODEL, indexfile=Config.ANSWER_INDEX):
+        if(self.dictionary==None):
+            self.LoadDictionary()
 
+        corpus = corpora.MmCorpus(corpusfile)
+        model = self.CreateTopicModel(method, corpus)
+        index = similarities.MatrixSimilarity(model[corpus])
+
+        model.save(modelfile)
+        index.save(indexfile)
+
+    def CreateCombinedTopicModel(self, method=Config.TOPICMODEL_METHOD, corpusfile=Config.COMBINED, modelfile=Config.COMBINED_MODEL, indexfile=Config.COMBINED_INDEX):
         if(self.dictionary==None):
             self.LoadDictionary()
 
@@ -177,20 +199,29 @@ class Gensim:
         document_model = self.GetDocumentModel(document, self.answermodel)
         return document_model
 
-    def GetUserTopicDistribution(self, userid):
+    def GetCombinedDocumentModel(self, document, modelfile=Config.COMBINED_MODEL):
+        if(self.dictionary == None):
+            self.LoadDictionary()
 
+        if(self.combinedmodel==None):
+            self.combinedmodel = self.LoadModel(modelfile)
+
+        document_model = self.GetDocumentModel(document, self.combinedmodel)
+        return document_model
+
+    def GetUserTopicDistribution(self, userid):
         if(self.dictionary == None):
             self.LoadDictionary()
 
         document = self.GetUserAnswers(userid)
-        user_topicdist = self.GetQuestionDocumentModel(document)
+        user_topicdist = self.GetCombinedDocumentModel(document)
         return user_topicdist
 
     def CreateUserTopicCorpus(self, userfile=Config.USERS):
         usercorpus = []
 
         index = 0
-        for User in Users.select().limit(1000):
+        for User in Users.select():
             user_topicmodel = self.GetUserTopicDistribution(User.id)
             if(user_topicmodel!=None):
                 User.usercorpusid = index
@@ -201,7 +232,6 @@ class Gensim:
         corpora.MmCorpus.serialize(userfile, usercorpus)
 
     def CreateUserTopicModel(self, corpusfile=Config.USERS, modelfile=Config.USER_MODEL, indexfile=Config.USER_INDEX):
-
         if(self.dictionary == None):
             self.LoadDictionary()
 
@@ -225,6 +255,7 @@ class Gensim:
         for sim in sims:
             i = i + 1
             print(str(sim[1]) + '\t' + str(sim[0]) + '\t' + documents[sim[0]].encode('utf-8'))
+
             if(i > 5):
                 break
 
@@ -245,11 +276,10 @@ class Gensim:
                 break
 
     def FindExperts(self, question, modelfile=Config.USER_MODEL, indexfile=Config.USER_INDEX):
-        query_model = self.GetQuestionDocumentModel(question)
+        query_model = self.GetCombinedDocumentModel(question)
         index = similarities.MatrixSimilarity.load(indexfile)
         sims = index[query_model]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
-
 
         i = 0
         for sim in sims:
