@@ -1,2 +1,5 @@
-Data/*.xml
+data/*.xml
+data/*.db
+data/*.log
+out/*
 *.pyc
