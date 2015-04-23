@@ -70,3 +70,8 @@ def getNounPhrases(html):
         for chunk in chunker.parse(pos_tag(word_tokenize(sent)))
         if isCandidateChunk(chunk)
     ]
+
+def getTagList(tags):
+    """ Inputs string of "<tag><tag><tag>" and returns list [tag, tag, tag]"""
+    tags = tags[1:len(tags)-1]
+    return tags.split('><')
