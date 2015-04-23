@@ -5,11 +5,11 @@ from gensim import similarities
 
 
 class TopicModelPredictor(UserPredictorBase):
-    def __init__(self, indexfile=config.CURRENT_INDEX):
+    def __init__(self, indexfile=config.USER_INDEX):
         self.index = similarities.MatrixSimilarity.load(indexfile)
 
     def predictUsers(self, body, tags, fgen, n=3):
-        featureVector = fgen.getDocumentFeature(body)
+        featureVector = fgen.getDocumentFeatures(body)
         sims = self.index[featureVector]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
         userIds= [sim[0] for sim in sims]

@@ -46,7 +46,7 @@ class TopicModel:
 
     def createUserCorpus(self, userfile=config.USERS):
         usercorpus = []
-        for User in Users.select():
+        for User in Users.select().limit(100):
             user_features = self.getUserFeatures(User.id)
             if(user_features!=None):
                 usercorpus.append(user_features)

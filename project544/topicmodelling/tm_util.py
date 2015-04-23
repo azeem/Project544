@@ -1,4 +1,6 @@
 from .. import util
+from nltk import word_tokenize
+from collections import defaultdict
 
 def preprocessPost(post):
     return util.stripTags(post).replace('\n', ' ').replace('\r', ' ')

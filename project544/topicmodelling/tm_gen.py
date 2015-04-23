@@ -79,7 +79,7 @@ class TopicModelGen:
 
     def createUserTopicModel(self, corpusfile=config.USERS, modelfile=config.USER_MODEL, indexfile=config.USER_INDEX):
         if(self.dictionary == None):
-            self.LoadDictionary()
+            self.loadDictionary()
         corpus = corpora.MmCorpus(corpusfile)
         model = models.LsiModel(corpus, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
         index = similarities.MatrixSimilarity(model[corpus])
