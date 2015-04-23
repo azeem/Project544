@@ -50,5 +50,4 @@ class TopicModel:
             user_features = self.getUserFeatures(User.id)
             if(user_features!=None):
                 usercorpus.append(user_features)
-                User.save()
         corpora.MmCorpus.serialize(userfile, usercorpus)

@@ -1,11 +1,11 @@
 from sklearn.linear_model import Perceptron
-import numpy 
+import numpy
 import pickle
 
-import config
-from base import UserPredictorBase
-from topicmodelling.gsim import Gensim
-from model import Posts, Users
+from .. import config
+from ..base import UserPredictorBase
+from ..topicmodelling.gsim import Gensim
+from ..model import Posts, Users
 
 class ClassifierUserPredictor(UserPredictorBase):
     def __init__(self, classifier=None, batchSize=1000):
@@ -13,7 +13,7 @@ class ClassifierUserPredictor(UserPredictorBase):
             classifier = Perceptron()
         self.cf = classifier
         self.batchSize = 1000
-        
+
     def learn(self, fgen, postLimit=None):
         query = Posts.select().where(Posts.posttypeid == 2)
         if postLimit is not None:
