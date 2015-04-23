@@ -1,7 +1,7 @@
 from peewee import *
-import Config
+import config
 
-database = SqliteDatabase(Config.DATABASE_FILENAME, **{})
+database = SqliteDatabase(config.DATABASE_FILENAME, **{})
 
 class UnknownField(object):
     pass
