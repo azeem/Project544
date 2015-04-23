@@ -1,7 +1,9 @@
+import os
 from gensim import corpora, models, similarities
 from .. import config
 import tm_util
 import tm_content
+from tm import TopicModel
 
 class TopicModelGen:
 
@@ -14,15 +16,16 @@ class TopicModelGen:
         self.dictionary = None
 
     def createDictionary(self, dictionaryfile=config.DICTIONARY):
-        documents = []
+        if(os.path.exists(dictionaryfile)):
+            print 'Dictionary ' + dictionaryfile  + ' aldready exists'
+            return
 
+        documents = []
         questionlist = tm_content.getQuestions()
         documents.extend(questionlist)
         answerlist = tm_content.getAnswers()
         documents.extend(answerlist)
-
         texts = tm_util.preprocessDocs(documents, self.stoplist)
-
         dictionary = corpora.Dictionary(texts)
         dictionary.save(dictionaryfile)
 
@@ -32,6 +35,10 @@ class TopicModelGen:
 
 
     def createCorpus(self, postlist, corpusfile):
+        if(os.path.exists(corpusfile)):
+            print 'Corpus at ' + corpusfile + ' aldready exists'
+            return
+
         if(self.dictionary == None):
             self.loadDictionary()
         texts = tm_util.preprocessDocs(postlist, self.stoplist)
@@ -39,14 +46,26 @@ class TopicModelGen:
         corpora.MmCorpus.serialize(corpusfile, corpus)
 
     def createQuestionCorpus(self, questioncorpusfile=config.QUESTIONS):
+        if(os.path.exists(questioncorpusfile)):
+            print 'Corpus at ' + questioncorpusfile + ' aldready exists'
+            return
+
         questionlist = tm_content.getQuestions()
         self.createCorpus(questionlist, questioncorpusfile)
 
     def createAnswerCorpus(self, answercorpusfile=config.ANSWERS):
+        if(os.path.exists(answercorpusfile)):
+            print 'Corpus at ' + answercorpusfile + ' aldready exists'
+            return
+
         answerlist = tm_content.GetAnswers()
         self.createCorpus(answerlist, answercorpusfile)
 
     def createCombinedCorpus(self, combinedcorpusfile=config.COMBINED):
+        if(os.path.exists(combinedcorpusfile)):
+            print 'Corpus at ' + combinedcorpusfile + ' aldready exists'
+            return
+
         questionlist = tm_content.getQuestions()
         answerlist = tm_content.getAnswers()
         combinedlist = questionlist + answerlist
@@ -55,6 +74,10 @@ class TopicModelGen:
 
 
     def createTopicModel(self, method, corpus, modelfile, indexfile):
+        if(os.path.exists(modelfile)):
+            print 'Topic Model ' + modelfile + ' aldready exists'
+            return
+
         if(self.dictionary == None):
             self.loadDictionary()
         if(method=='lda_mallet'):
@@ -78,6 +101,9 @@ class TopicModelGen:
         self.createTopicModel(method, corpus, modelfile, indexfile)
 
     def createUserTopicModel(self, corpusfile=config.USERS, modelfile=config.USER_MODEL, indexfile=config.USER_INDEX):
+        if(os.path.exists(modelfile)):
+            print 'User Topic Model ' + modelfile + ' aldready exists'
+            return
         if(self.dictionary == None):
             self.loadDictionary()
         corpus = corpora.MmCorpus(corpusfile)
@@ -85,3 +111,11 @@ class TopicModelGen:
         index = similarities.MatrixSimilarity(model[corpus])
         model.save(modelfile)
         index.save(indexfile)
+
+    def learn(self):
+        self.createDictionary()
+        self.createCombinedCorpus()
+        self.createCombinedTopicModel()
+        model = TopicModel(modelfile=config.CURRENT_MODEL,indexfile=config.CURRENT_INDEX)
+        model.createUserCorpus()
+        self.createUserTopicModel()

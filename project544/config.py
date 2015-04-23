@@ -18,6 +18,7 @@ COMBINED_INDEX      = "./out/combined.index"
 CURRENT_MODEL       = COMBINED_MODEL
 CURRENT_INDEX       = COMBINED_INDEX
 USERS               = "./out/users.mm"
+USERS_LIST           = "./out/users.list"
 USER_MODEL          = "./out/users.lsi"
 USER_INDEX          = "./out/users.index"
 USER_PREDICTOR      = "./out/userpredictor.mm"

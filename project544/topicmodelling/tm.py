@@ -1,3 +1,5 @@
+import os
+import pickle
 from gensim import corpora, models, similarities
 from ..model import Users
 from .. import config
@@ -45,9 +47,17 @@ class TopicModel:
         return sims
 
     def createUserCorpus(self, userfile=config.USERS):
+        if(os.path.exists(userfile)):
+            print 'User Corpus ' + userfile + ' aldready exists'
+            return
+
         usercorpus = []
-        for User in Users.select().limit(100):
+        userslist = []
+        for User in Users.select():
             user_features = self.getUserFeatures(User.id)
             if(user_features!=None):
                 usercorpus.append(user_features)
+                userslist.append(User.id)
         corpora.MmCorpus.serialize(userfile, usercorpus)
+        userfile = open(config.USERS_LIST, 'w')
+        pickle.dump(userslist, userfile)
