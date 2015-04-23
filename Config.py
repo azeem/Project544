@@ -1,23 +1,18 @@
-MALLET_PATH         = "/home/graghu/mallet-2.0.7/bin/mallet"
-DATABASE_FILENAME   = "./Data/so-dump.db"
-STOPLIST            = "./Data/stoplist"
-DICTIONARY          = "./Out/posts.dict"
-QUESTIONS           = "./Out/questions.mm"
-QUESTION_LIST       = "./Out/question.list"
-QUESTION_MODEL      = "./Out/questions.lda"
-QUESTION_INDEX      = "./Out/questions.index"
-ANSWERS             = "./Out/answers.mm"
-ANSWER_LIST         = "./Out/answer.list"
-ANSWER_MODEL        = "./Out/answers.lda"
-ANSWER_INDEX        = "./Out/answers.index"
-COMBINED            = "./Out/combined.mm"
-COMBINED_MODEL      = "./Out/combined.lda"
-COMBINED_INDEX      = "./Out/combined.index"
-USERS               = "./Out/users.mm"
-USER_MODEL         = "./Out/users.lsi"
-USER_INDEX         = "./Out/users.index"
-TOPICMODEL_METHOD   = "lda_mallet"
+import path
+import os
 
-num_topics_lsi = 300
-num_topics_rp  = 500
-num_topics_lda = 100
+MALLET_PATH         = path.join(os.getenv("MALLET_HOME"), "bin/mallet")
+DATABASE_FILENAME   = "./data/so-dump.db"
+STOPLIST            = "./data/stoplist"
+DICTIONARY          = "./out/posts.dict"
+QUESTIONS           = "./out/questions.mm"
+QUESTION_LIST       = "./out/question.list"
+QUESTION_MODEL      = "./out/questions.lda"
+QUESTION_INDEX      = "./out/questions.index"
+ANSWERS             = "./out/answers.mm"
+ANSWER_LIST         = "./out/answer.list"
+ANSWER_MODEL        = "./out/answers.lda"
+ANSWER_INDEX        = "./out/answers.index"
+USER_PREDICTOR      = "./out/userpredictor.mm"
+TOPICMODEL_METHOD   = "lda_mallet"
+NUM_TOPICS_LDA      = 100
