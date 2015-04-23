@@ -10,7 +10,7 @@ class FeatureGeneratorBase(object):
         """ Returns a list of tuples (int, float) representing the feature vector for document """
         raise NotImplementedError()
 
-    
+
 class UserPredictorBase(object):
     """ Abstract Base class for User prediction system """
 
@@ -21,7 +21,7 @@ class UserPredictorBase(object):
         fgen - a feature generator instance
         """
         raise NotImplementedError()
-    
+
     def predictUsers(self, body, tags, fgen, n):
         """
         This method should implement learning for the model
