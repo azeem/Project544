@@ -35,7 +35,7 @@ class UserPredictorBase(object):
         """
         raise NotImplementedError()
 
-    def predictUserScore(self, body, tags, fgen, users)
+    def predictUserScore(self, body, tags, fgen, users):
         """
         This method returns the ranking score for a user under the prediction
         algorithm
