@@ -28,6 +28,7 @@ class TopicModelGen:
         texts = tm_util.preprocessDocs(documents, self.stoplist)
         dictionary = corpora.Dictionary(texts)
         dictionary.save(dictionaryfile)
+        print 'Dictionary ' + dictionaryfile + ' created.'
 
     def loadDictionary(self, dictionaryfile=config.DICTIONARY):
         self.dictionary = corpora.Dictionary.load(dictionaryfile)
@@ -44,6 +45,7 @@ class TopicModelGen:
         texts = tm_util.preprocessDocs(postlist, self.stoplist)
         corpus = [self.dictionary.doc2bow(text) for text in texts]
         corpora.MmCorpus.serialize(corpusfile, corpus)
+        print 'Corpus at' + corpusfile + ' created.'
 
     def createQuestionCorpus(self, questioncorpusfile=config.QUESTIONS):
         if(os.path.exists(questioncorpusfile)):
@@ -83,10 +85,11 @@ class TopicModelGen:
         if(method=='lda_mallet'):
             model = models.wrappers.LdaMallet(config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
         elif(method=='lda'):
-            model = models.LdaModel(corpus, ld2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
+            model = models.LdaModel(corpus, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
         index = similarities.MatrixSimilarity(model[corpus])
         model.save(modelfile)
         index.save(indexfile)
+        print 'Topic Model ' + modelfile + ' created.'
 
     def createQuestionTopicModel(self, method=config.TOPICMODEL_METHOD, corpusfile=config.QUESTIONS, modelfile=config.QUESTION_MODEL, indexfile=config.QUESTION_INDEX):
         corpus = corpora.MmCorpus(corpusfile)
@@ -111,6 +114,7 @@ class TopicModelGen:
         index = similarities.MatrixSimilarity(model[corpus])
         model.save(modelfile)
         index.save(indexfile)
+        print 'User Topic Model ' + modelfile + ' created.'
 
     def learn(self):
         self.createDictionary()
