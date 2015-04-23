@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import sqlite3
 import os
+import sys
 import xml.etree.cElementTree as etree
 import logging
 
@@ -84,18 +85,18 @@ ANATHOMY = {
 }
 
 def dump_files(file_names, anathomy, 
-    dump_path='./', 
+    data_path='./', 
     dump_database_name = 'so-dump.db',
     create_query='CREATE TABLE IF NOT EXISTS [{table}]({fields})',
     insert_query='INSERT INTO {table} ({columns}) VALUES ({values})',
     log_filename='so-parser.log'):
 
- logging.basicConfig(filename=os.path.join(dump_path, log_filename),level=logging.INFO)
- db = sqlite3.connect(os.path.join(dump_path, dump_database_name))
+ logging.basicConfig(filename=os.path.join(data_path, log_filename),level=logging.INFO)
+ db = sqlite3.connect(os.path.join(data_path, dump_database_name))
 
  for file in file_names:
   print "Opening {0}.xml".format(file)
-  with open(os.path.join(dump_path, file + '.xml')) as xml_file:
+  with open(os.path.join(data_path, file + '.xml')) as xml_file:
    tree = etree.iterparse(xml_file)
    table_name = file
 
@@ -131,5 +132,8 @@ def dump_files(file_names, anathomy,
    db.commit()
    del(tree)
 
+
 if __name__ == '__main__':
- dump_files(ANATHOMY.keys(), ANATHOMY)
+ if sys.argv != 1:
+  print("Usage: python stackexchange_importer.py DATA_DIRECTORY")
+ dump_files(ANATHOMY.keys(), ANATHOMY, data_path = sys.argv[1])
