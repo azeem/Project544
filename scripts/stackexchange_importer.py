@@ -134,6 +134,6 @@ def dump_files(file_names, anathomy,
 
 
 if __name__ == '__main__':
- if sys.argv != 1:
+ if len(sys.argv) != 1:
   print("Usage: python stackexchange_importer.py DATA_DIRECTORY")
  dump_files(ANATHOMY.keys(), ANATHOMY, data_path = sys.argv[1])
