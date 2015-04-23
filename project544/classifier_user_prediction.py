@@ -4,7 +4,7 @@ import pickle
 
 import config
 from base import UserPredictorBase
-from topicmodelling.gensim import Gensim
+from topicmodelling.gsim import Gensim
 from model import Posts, Users
 
 class ClassifierUserPredictor(UserPredictorBase):
@@ -29,7 +29,7 @@ class ClassifierUserPredictor(UserPredictorBase):
                 continue
             print("Generating feature vector for id {0}".format(answer.id))
             qa = answer.parentid.body + answer.body
-            feature = fgen.GetDocumentModel(qa, modelfile=Config.ANSWER_MODEL)
+            feature = fgen.GetDocumentModel(qa, config.ANSWER_MODEL)
             # featureVector = fgen.GetDocumentFeatures(qa)
             featureMatrix.append([tup[1] for tup in sorted(featureVector, key=lambda x:x[0])])
             classList.append(answer.owneruserid.id)
@@ -43,7 +43,7 @@ class ClassifierUserPredictor(UserPredictorBase):
                 classList = []
 
     def predictUsers(self, body, tags, fgen, n = 3):
-        featureVector = fgen.GetDocumentModel(body, modelfile=Config.ANSWER_MODEL)
+        featureVector = fgen.GetDocumentModel(body, config.ANSWER_MODEL)
         # featureVector = fgen.GetDocumentFeatures(body)
         X = numpy.array([[tup[1] for tup in sorted(featureVector, key=lambda x:x[0])]])
         userIds = [int(self.cf.classes_[index]) for index, score in sorted(enumerate(self.cf.decision_function(X)[0]), key=lambda x:x[1])][:n]
@@ -57,8 +57,8 @@ class ClassifierUserPredictor(UserPredictorBase):
 
 def testLearn():
     gensim = Gensim()
-    up = UserPredictor()
-    up.learn(gensim, Config.num_topics_lda)
+    up = ClassifierUserPredictor()
+    up.learn(gensim)
     file = open(Config.USER_PREDICTOR, "w")
     pickle.dump(up, file)
 
