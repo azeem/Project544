@@ -30,3 +30,15 @@ class TopicModelViz:
     def genWordClouds(self):
         for i in range(config.NUM_TOPICS_LDA):
             self.genWordCloud(i)
+
+    def genTopicProportion(self, question):
+        topic_prop = self.topicmodel.getDocumentFeatures(question)
+        plt.scatter(*zip(*topic_prop))
+        plt.savefig(os.path.join(config.VISUALIZATION_FOLDER,"doc_scatterplot"))
+        plt.close()
+
+    def genUserTopicProportion(self, userid):
+        topic_prop = self.topicmodel.getUserFeatures(userid)
+        plt.scatter(*zip(*topic_prop))
+        plt.savefig(os.path.join(config.VISUALIZATION_FOLDER,"user" + str(userid) + "_scatterplot"))
+        plt.close()

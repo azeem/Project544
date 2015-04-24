@@ -1,12 +1,13 @@
 import os
 import pickle
+from project544.base import FeatureGeneratorBase
 from gensim import corpora, models, similarities
 from ..model import Users
 from .. import config
 import tm_util
 import tm_content
 
-class TopicModel:
+class TopicModel(FeatureGeneratorBase):
 
     def __init__(self, modelfile=config.CURRENT_MODEL, indexfile=config.CURRENT_INDEX, method=config.TOPICMODEL_METHOD):
         stoplist = open(config.STOPLIST, 'r')
@@ -61,3 +62,6 @@ class TopicModel:
         corpora.MmCorpus.serialize(userfile, usercorpus)
         userfile = open(config.USERS_LIST, 'w')
         pickle.dump(userslist, userfile)
+
+    def getMaxDimSize(self):
+        return config.NUM_TOPICS_LDA
