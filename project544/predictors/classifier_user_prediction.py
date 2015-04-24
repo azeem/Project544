@@ -57,7 +57,7 @@ def testLearn():
     from project544.topicmodelling.tm import TopicModel
     tm = TopicModel()
     up = ClassifierUserPredictor()
-    up.learn(tm, postLimit=10)
+    up.learn(tm)
     file = open(config.USER_PREDICTOR, "w")
     pickle.dump(up, file)
 
