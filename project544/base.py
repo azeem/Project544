@@ -10,6 +10,9 @@ class FeatureGeneratorBase(object):
         """ Returns a list of tuples (int, float) representing the feature vector for document """
         raise NotImplementedError()
 
+    def getMaxDimSize(self):
+        raise NotImplementedError()
+
 
 class UserPredictorBase(object):
     """ Abstract Base class for User prediction system """
