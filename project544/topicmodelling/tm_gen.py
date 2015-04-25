@@ -1,9 +1,10 @@
+import sys
 import os
 from gensim import corpora, models, similarities
 from .. import config
 import tm_util
 import tm_content
-from tm import TopicModel
+# from tm import TopicModel
 
 class TopicModelGen:
 
@@ -116,10 +117,29 @@ class TopicModelGen:
         index.save(indexfile)
         print 'User Topic Model ' + modelfile + ' created.'
 
-    def learn(self):
+    def learn(self, createquestionmodel = False, createanswermodel = False):
         self.createDictionary()
+        if(createquestionmodel):
+            self.createQuestionCorpus()
+            self.createQuestionTopicModel()
+        if(createanswermodel):
+            self.createAnswerCorpus()
+            self.createAnswerTopicModel()
         self.createCombinedCorpus()
         self.createCombinedTopicModel()
-        model = TopicModel(modelfile=config.CURRENT_MODEL,indexfile=config.CURRENT_INDEX)
-        model.createUserCorpus()
-        self.createUserTopicModel()
+        # model = TopicModel(modelfile=config.CURRENT_MODEL, indexfile=config.CURRENT_INDEX)
+        # model.createUserCorpus()
+        # self.createUserTopicModel()
+
+if __name__ == '__main__':
+
+    if(len(sys.argv)==2):
+        option = int(sys.argv[1])
+
+    topicmodelgenerator = TopicModelGen()
+    if(option==1):
+        topicmodelgenerator.learn()
+    elif(option==2):
+        topicmodelgenerator.learn(createquestionmodel=True)
+    elif(option==3):
+        topicmodelgenerator.learn(createanswermodel=True)

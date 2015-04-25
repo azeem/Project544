@@ -62,6 +62,7 @@ class TopicModel(FeatureGeneratorBase):
         corpora.MmCorpus.serialize(userfile, usercorpus)
         userfile = open(config.USERS_LIST, 'w')
         pickle.dump(userslist, userfile)
+        print 'User Corpus '  + userfile + ' created.'
 
     def getMaxDimSize(self):
         return config.NUM_TOPICS_LDA

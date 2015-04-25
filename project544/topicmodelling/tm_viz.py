@@ -21,7 +21,7 @@ class TopicModelViz:
         return " ".join([" ".join(int(multiplier*i[0]) * [i[1]]) for i in terms])
 
     def genWordCloud(self, index):
-        wordcloud = WordCloud().generate(self.terms_to_wordcounts(self.terms[index]))
+        wordcloud = WordCloud(background_color="white").generate(self.terms_to_wordcounts(self.terms[index]))
         plt.imshow(wordcloud)
         plt.axis("off")
         plt.savefig(os.path.join(config.VISUALIZATION_FOLDER,"wordcloud_"+str(index)))
