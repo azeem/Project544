@@ -1,13 +1,20 @@
+import pickle
 from ..model import Posts
+from .. import config
 import tm_util
 
-def getQuestions():
+def getQuestions(savetofile=False):
     questionlist = []
+    questions = []
 
     for Post in Posts.select().where(Posts.posttypeid==1):
         post = Post.title + ' ' + Post.body
         postcontent = tm_util.preprocessPost(post)
         questionlist.append(postcontent)
+        questions.append(Post.title)
+
+    with open(config.QUESTION_LIST, 'w') as fout:
+        pickle.dump(questions, fout)
 
     return questionlist
 

@@ -41,11 +41,11 @@ class TopicModel(FeatureGeneratorBase):
         user_features = self.getDocumentFeatures(userdocument)
         return user_features
 
-    def findSimilarDocs(self, document):
+    def findSimilarDocs(self, document, n=10):
         document_model = self.getDocumentFeatures(document)
         sims = self.index[document_model]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
-        return sims
+        return sims[:n]
 
     def createUserCorpus(self, userfile=config.USERS):
         if(os.path.exists(userfile)):
@@ -66,3 +66,18 @@ class TopicModel(FeatureGeneratorBase):
 
     def getMaxDimSize(self):
         return config.NUM_TOPICS_LDA
+
+class QuestionTopicModel(TopicModel):
+
+    def __init__(self, modelfile=config.QUESTION_MODEL, indexfile=config.QUESTION_INDEX, method=config.TOPICMODEL_METHOD):
+        super(QuestionTopicModel, self).__init__(modelfile, indexfile, method)
+        self.questions = None
+        with open(config.QUESTION_LIST, 'r') as fin:
+            self.questions = pickle.load(fin)
+
+    def findSimilarQuestions(self, question, n=5):
+        sims = self.findSimilarDocs(question, n)
+        similar = []
+        for sim in sims:
+            similar.append(self.questions[sim[0]].encode('utf-8'))
+        return similar

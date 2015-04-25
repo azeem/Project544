@@ -11,7 +11,7 @@ class TopicModelViz:
 
         self.terms = []
         for i in range(config.NUM_TOPICS_LDA):
-            temp = self.topicmodel.model.show_topic(i, 50)
+            temp = self.topicmodel.model.show_topic(i, 80)
             terms = []
             for term in temp:
                 terms.append(term)
@@ -42,3 +42,7 @@ class TopicModelViz:
         plt.scatter(*zip(*topic_prop))
         plt.savefig(os.path.join(config.VISUALIZATION_FOLDER,"user" + str(userid) + "_scatterplot"))
         plt.close()
+
+if __name__ == "__main__":
+    topicmodelviz = TopicModelViz()
+    topicmodelviz.genWordClouds()

@@ -53,7 +53,7 @@ class TopicModelGen:
             print 'Corpus at ' + questioncorpusfile + ' aldready exists'
             return
 
-        questionlist = tm_content.getQuestions()
+        questionlist = tm_content.getQuestions(savetofile=True)
         self.createCorpus(questionlist, questioncorpusfile)
 
     def createAnswerCorpus(self, answercorpusfile=config.ANSWERS):
