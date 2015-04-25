@@ -6,7 +6,7 @@ class FeatureGeneratorBase(object):
         raise NotImplementedError()
 
     """ Abstract base class for a feature generation system """
-    def getDocumentFeatures(self, document):
+    def getDocumentFeatures(self, document, tags):
         """ Returns a list of tuples (int, float) representing the feature vector for document """
         raise NotImplementedError()
 

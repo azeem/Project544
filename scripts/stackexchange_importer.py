@@ -4,6 +4,7 @@ import os
 import sys
 import xml.etree.cElementTree as etree
 import logging
+import random
 
 ANATHOMY = {
  'Badges': {
@@ -43,6 +44,7 @@ ANATHOMY = {
   'CommentCount':'INTEGER',
   'FavoriteCount':'INTEGER',
   'ClosedDate':'DATETIME',
+  'ForEvaluation': 'INTEGER'
  },
  'Votes': {
   'Id':'INTEGER PRIMARY KEY',
@@ -82,46 +84,59 @@ ANATHOMY = {
   'ProfileImageUrl': 'TEXT',
   'AccountId': 'INTEGER'
   },
+ 'Tags': {
+  'Id':'INTEGER PRIMARY KEY AUTOINCREMENT',
+  'Tag':'TEXT',
+ },
+ 'TagPostMap': {
+  'Id':'INTEGER PRIMARY KEY AUTOINCREMENT',
+  'TagId':('INTEGER', 'Tags(Id)'),
+  'PostId':('INTEGER', 'Posts(Id)')
+ }
 }
 
-def dump_files(file_names, anathomy, 
+def dump_files(file_names, anathomy,
     data_path='./', 
     dump_database_name = 'so-dump.db',
     create_query='CREATE TABLE IF NOT EXISTS [{table}]({fields})',
     insert_query='INSERT INTO {table} ({columns}) VALUES ({values})',
-    log_filename='so-parser.log'):
+    log_filename='so-parser.log', part=None):
 
  logging.basicConfig(filename=os.path.join(data_path, log_filename),level=logging.INFO)
  db = sqlite3.connect(os.path.join(data_path, dump_database_name))
 
- for file in file_names:
-  print "Opening {0}.xml".format(file)
-  with open(os.path.join(data_path, file + '.xml')) as xml_file:
-   tree = etree.iterparse(xml_file)
-   table_name = file
-
+ for table_name in anathomy.keys():
    fields = ['{0} {1}'.format(name, sql_type if isinstance(sql_type, str) else sql_type[0]) for name, sql_type in anathomy[table_name].items()]
    fields += ['foreign key ({0}) references {1}'.format(name, sql_type[1]) for name, sql_type in anathomy[table_name].items() if isinstance(sql_type, tuple)]
    sql_create = create_query.format(
         table=table_name, 
         fields=", ".join(fields))
    print('Creating table {0}'.format(table_name))
-
    try:
     logging.info(sql_create)
     db.execute(sql_create)
    except Exception, e:
     logging.warning(e)
 
+ for file in file_names:
+  print "Opening {0}.xml".format(file)
+  with open(os.path.join(data_path, file + '.xml')) as xml_file:
+   tree = etree.iterparse(xml_file)
+   table_name = file
    for events, row in tree:
     try:
      logging.debug(row.attrib.keys())
+     columns=row.attrib.keys()
+     values=row.attrib.values()
+     if table_name == "Posts":
+      columns = ["ForEvaluation"] + columns
+      values = [1 if part is not None and random.randint(0, part-1) == 0 else 0] + values
 
      db.execute(insert_query.format(
         table=table_name, 
-        columns=', '.join(row.attrib.keys()), 
-        values=('?, ' * len(row.attrib.keys()))[:-2]),
-        row.attrib.values())
+        columns=', '.join(columns),
+        values=('?, ' * len(columns))[:-2]),
+        values)
      print ".",
     except Exception, e:
      logging.warning(e)
@@ -131,9 +146,25 @@ def dump_files(file_names, anathomy,
    print "\n"
    db.commit()
    del(tree)
+ # do tags
+ import re
+ for postId, tags in db.execute("select Id, Tags from Posts"):
+  if tags is None:
+   continue
+  tags = [m.group(1) for m in re.finditer(r'\<([^\>]*)\>', tags)]
+  for tag in tags:
+   row = db.execute("select Id from Tags where Tag=?", [tag]).fetchone()
+   if row is None:
+    c = db.execute("insert into Tags (Tag) values (?)", [tag])
+    tagId = c.lastrowid
+   else:
+    tagId = row[0]
+   db.execute("insert into TagPostMap (TagId, PostId) values (?,?)", [tagId, postId])
+ db.commit()
 
 
 if __name__ == '__main__':
  if len(sys.argv) != 2:
   print("Usage: python stackexchange_importer.py DATA_DIRECTORY")
- dump_files(ANATHOMY.keys(), ANATHOMY, data_path = sys.argv[1])
+ filenames = [key for key in ANATHOMY.keys() if key not in ("Tags", "TagPostMap")]
+ dump_files(filenames, ANATHOMY, data_path = sys.argv[1], part=30)

@@ -48,6 +48,7 @@ class Posts(BaseModel):
     communityowneddate = DateTimeField(db_column='CommunityOwnedDate', null=True)
     creationdate = DateTimeField(db_column='CreationDate', null=True)
     favoritecount = IntegerField(db_column='FavoriteCount', null=True)
+    forevaluation = IntegerField(db_column='ForEvaluation', null=True)
     id = PrimaryKeyField(db_column='Id', null=True)
     lastactivitydate = DateTimeField(db_column='LastActivityDate', null=True)
     lasteditdate = DateTimeField(db_column='LastEditDate', null=True)
@@ -77,6 +78,21 @@ class Comments(BaseModel):
     class Meta:
         db_table = 'Comments'
 
+class Tags(BaseModel):
+    id = PrimaryKeyField(db_column='Id', null=True)
+    tag = TextField(db_column='Tag', null=True)
+
+    class Meta:
+        db_table = 'Tags'
+
+class Tagpostmap(BaseModel):
+    id = PrimaryKeyField(db_column='Id', null=True)
+    postid = ForeignKeyField(db_column='PostId', null=True, rel_model=Posts, to_field='id')
+    tagid = ForeignKeyField(db_column='TagId', null=True, rel_model=Tags, to_field='id')
+
+    class Meta:
+        db_table = 'TagPostMap'
+
 class Votes(BaseModel):
     bountyamount = IntegerField(db_column='BountyAmount', null=True)
     creationdate = DateTimeField(db_column='CreationDate', null=True)
@@ -87,4 +103,11 @@ class Votes(BaseModel):
 
     class Meta:
         db_table = 'Votes'
+
+class SqliteSequence(BaseModel):
+    name = UnknownField(null=True)  # 
+    seq = UnknownField(null=True)  # 
+
+    class Meta:
+        db_table = 'sqlite_sequence'
 

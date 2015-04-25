@@ -4,6 +4,16 @@ import re
 import xml.sax
 from xml.sax import ContentHandler
 
+INTERESTING_CATEGORIES = (
+    "Marvel_Comics_superheroes",
+    "Marvel_Comics_characters",
+    "DC_Comics_superheroes",
+    "DC_Comics_characters",
+    "Harry_Potter_characters",
+    "Star_Trek",
+    "Star_Trek_characters"
+)
+
 class WikiContentHandler(ContentHandler):
     def __init__(self, part = None):
         self.tagStack = []
@@ -24,7 +34,6 @@ class WikiContentHandler(ContentHandler):
             self.skip = random.randint(0, self.part-1) != 0
 
     def endElement(self, name):
-        # print(name)
         if self._checkTags("page", "mediawiki"):
             if self.skip:
                 self.skip = False
@@ -46,9 +55,20 @@ class WikiContentHandler(ContentHandler):
                 self.page[key].append(content)
 
     def processWikiPage(self, page):
-        if page["id"] == "25":
-            tree = mwp.parse(page["text"])
-            print("\n".join([u"{0}({1})".format(link.text, link.title) for link in tree.filter_wikilinks()]))
+        if "text" not in page or page["text"].strip() == "":
+            return
+        tree = mwp.parse(page["text"])
+        categories = [re.match(r"^Category\:(.*)", link.title.strip_code()).group(1) for link in tree.filter_wikilinks() if link.title.startswith("Category:")]
+        isInteresting = False
+        for category in categories:
+            if category in INTERESTING_CATEGORIES:
+                isInteresting = True
+
+        if isInteresting:
+            print(page)
+            
+        # print("\n".join([u"{0}({1})".format(heading.title, heading.level) for heading in tree.filter_headings()]))
+        # print("\n".join([u"{0}".format(template.name) for template in tree.filter_templates()]))
 
 def process(xmlFile):
     # for page in getWikiPages(xmlFile):
