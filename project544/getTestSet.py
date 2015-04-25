@@ -1,11 +1,11 @@
-from model import Posts
+from .model import Posts
 import pickle
 import random
 import sys
 
 def main(test_file):
     min_answers = 2
-    test_set_length = 100
+    test_set_length = 500
 
     all_questions = Posts.select().where(Posts.posttypeid == 1)
     all_questions_accepted_answer = Posts.select().where((Posts.posttypeid == 1) & (Posts.acceptedanswerid.is_null(False)))

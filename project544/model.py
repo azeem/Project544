@@ -62,6 +62,7 @@ class Posts(BaseModel):
     tags = TextField(db_column='Tags', null=True)
     title = TextField(db_column='Title', null=True)
     viewcount = IntegerField(db_column='ViewCount', null=True)
+    forevaluation = IntegerField(db_column='ForEvaluation', null=True)
 
     class Meta:
         db_table = 'Posts'
@@ -105,8 +106,8 @@ class Votes(BaseModel):
         db_table = 'Votes'
 
 class SqliteSequence(BaseModel):
-    name = UnknownField(null=True)  # 
-    seq = UnknownField(null=True)  # 
+    name = UnknownField()  # 
+    seq = UnknownField()  # 
 
     class Meta:
         db_table = 'sqlite_sequence'
