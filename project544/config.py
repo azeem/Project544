@@ -25,3 +25,4 @@ USER_PREDICTOR      = "./out/userpredictor.mm"
 TOPICMODEL_METHOD   = "lda"
 NUM_TOPICS_LDA      = 100
 VISUALIZATION_FOLDER= "./out/viz"
+TEST_SET            = "./testset.pickle"

@@ -75,3 +75,37 @@ def getTagList(tags):
     """ Inputs string of "<tag><tag><tag>" and returns list [tag, tag, tag]"""
     tags = tags[1:len(tags)-1]
     return tags.split('><')
+
+def sortByVal(user_val_list, isReverse=False):
+    return sorted(user_val_list, key=lambda tup: tup[1], reverse=isReverse)    
+
+def getNumOrderMismatches(user_vote_list, user_score_list):
+    numMismatches = 0
+    for i in range(len(user_score_list)):
+        if user_vote_list[i][0] != user_score_list[i][0]:
+            numMismatches += 1
+
+    return numMismatches
+
+def getListMismatchDistance(user_vote_list, user_score_list):
+    mismatchDist = 0
+    users_sorted_vote = [tup[0] for tup in user_vote_list]
+    users_sorted_score = [tup[0] for tup in user_score_list]
+
+    for i1, user_id in enumerate(users_sorted_vote):
+        i2 = users_sorted_score.index(user_id)
+        mismatchDist += abs(i1 - i2)
+
+    return mismatchDist
+
+def removeDuplicateUsers(user_vote_list):
+    user_hash = {}
+    tup_list = []
+    for tup in user_vote_list:
+        if tup[0] in user_hash:
+            continue
+        
+        user_hash[tup[0]] = 1
+        tup_list.append(tup)
+
+    return tup_list

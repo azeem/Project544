@@ -5,6 +5,7 @@ import pickle
 import peewee
 
 from .. import config
+from .. import util
 from ..base import UserPredictorBase
 from ..model import Posts, Users
 
@@ -95,29 +96,94 @@ def testPredict():
     file = open(config.USER_PREDICTOR, "r")
     up = pickle.load(file)
     file.close()
+
+    with open(config.TEST_SET, 'r') as fin:
+        test_set = pickle.load(fin)
+
     from project544.topicmodelling.tm import TopicModel
     tm = TopicModel()
 
-    query = Posts.select().where((Posts.posttypeid == 1) & (Posts.id > 7000)).limit(5)
+    #query = Posts.select().where((Posts.posttypeid == 1) & (Posts.id > 7000)).limit(5)
+    total_num_mismatches = 0
+    total_mismatch_dist = 0
+    total_score = 0
+    total_users_predicted = 0
+
+    query = Posts.select().where(Posts.id << test_set) 
     for question in query:
+        print("*"*80)
         users = up.predictUsers(question.body, None, tm, n = 10)
+        answers = Posts.select().where((Posts.posttypeid == 2) & (Posts.parentid == question.id))
+
+        user_vote_list = []     # List of tuple (score, user_id)
+        for answer in answers:
+            if answer.owneruserid is not None:
+                user_vote_list.append((answer.owneruserid.id, answer.score))
+            else:
+                pass
+                #print "None user object"
+
+        user_vote_list = util.removeDuplicateUsers(util.sortByVal(user_vote_list, True))
+        user_ids = [tup[0] for tup in user_vote_list]
+
+        tags = util.getTagList(question.tags)
+
+        scores = up.predictUserScore(question.body, None, tm, user_ids)
+        if (len(user_vote_list) != len(scores)):
+            print("ERROR")
+            print(question.id)
+            print(user_vote_list)
+            print(scores)
+        
+        user_score_list = [(user_vote_list[i][0], scores[i]) for i in range(len(user_vote_list))]
+        user_score_list = util.sortByVal(user_score_list)
+        
+        num_mismatches = util.getNumOrderMismatches(user_vote_list, user_score_list)
+        mismatch_dist = util.getListMismatchDistance(user_vote_list, user_score_list)
+        
+        total_num_mismatches += num_mismatches
+        total_mismatch_dist += mismatch_dist
+        
         print("Top predictions for Post {0}".format(question.id))
         print("-------------------------")
-        print(stripTags(question.title))
+        print(stripTags(question.title).encode('utf-8'))
         print("")
-        print(stripTags(question.body))
+        print(stripTags(question.body).encode('utf-8'))
         print("-------------------------")
         print([user.displayname for user in users])
         print("")
 
-    query = Posts.select().where((Posts.posttypeid == 1) & (Posts.id > 6000)).limit(5)
-    for question in query:
-        users = [answer.owneruserid for answer in Posts.select().where(Posts.parentid == question.id)]
-        userIds = [user.id for user in users]
-        scores = up.predictUserScore(question.body, None, tm, userIds)
         print("User Scores for Post {0}".format(question.id))
-        print("\n".join("{0}({1})".format(user.displayname, score) for user, score in zip(users, scores)))
+        print("user_id" + "\t" + "votes" + "\t" + "prediction score")
+        for index, tup in enumerate(user_vote_list):
+            print str(tup[0]) + '\t' + str(tup[1]) + '\t' + str(scores[index])
+            total_score += scores[index]
+            total_users_predicted += 1
+
         print("")
+        print([tup[0] for tup in user_vote_list])
+        print([tup[0] for tup in user_score_list])
+        print("")
+        print("Num Mismatches: {0}".format(num_mismatches))
+        print("Mismatch Dist (Total): {0}".format(mismatch_dist))
+        print("")
+        print("*"*80)
+    if total_users_predicted > 0:
+        total_questions = query.count()
+        print("")
+        print("Aggregated Statistics:")
+        print("Average Num Mismatches: {0}".format(total_num_mismatches / total_questions))
+        print("Average mismatch dist per question: {0}".format(total_mismatch_dist / total_questions))
+        print("Average mismatch dist per user: {0}".format(total_mismatch_dist / total_users_predicted))
+        print("Average score: {0}".format(total_score / total_users_predicted))
+    #query = Posts.select().where((Posts.posttypeid == 1) & (Posts.id > 6000)).limit(5)
+    #for question in query:
+    #    users = [answer.owneruserid for answer in Posts.select().where(Posts.parentid == question.id)]
+    #    userIds = [user.id for user in users]
+    #    scores = up.predictUserScore(question.body, None, tm, userIds)
+    #    print("User Scores for Post {0}".format(question.id))
+    #    print("\n".join("{0}({1})".format(user.displayname, score) for user, score in zip(users, scores)))
+    #    print("")
 
 if __name__ == "__main__":
     import sys
