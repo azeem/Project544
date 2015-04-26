@@ -26,7 +26,7 @@ class ClassifierUserPredictor(UserPredictorBase):
 
         maxUserRep = float(Users.select(peewee.fn.Max(Users.reputation)).scalar())
 
-        featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+3, input_type = 'pair')
+        featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+4, input_type = 'pair')
         featureMatrix = []
         classList = []
         for i, answer in enumerate(query):
@@ -34,10 +34,12 @@ class ClassifierUserPredictor(UserPredictorBase):
                 continue
             print("Generating feature vector for id {0}".format(answer.id))
             # docment features
-            featureVector = fgen.getDocumentFeatures(answer.parentid.title + answer.body)
+            featureVector = fgen.getDocumentFeatures(answer.parentid.title + answer.parentid.body + answer.body)
             featureVector = [(str(dim), value) for dim, value in featureVector]
             # additional features
             maxScore = Posts.select(peewee.fn.Max(Posts.score)).where(Posts.parentid == answer.parentid).scalar()
+            maxLength = max(len(post.body) for post in Posts.select().where(Posts.parentid == answer.parentid))
+            featureVector.append(("Length", (len(answer.body)/float(maxLength))))
             featureVector.append(("Score", 1 if maxScore == 0 else (answer.score/float(maxScore))))
             featureVector.append(("Accepted", 1 if answer.id == answer.parentid.acceptedanswerid else 0))
             featureVector.append(("OwnerRep", answer.owneruserid.reputation/maxUserRep))
@@ -54,10 +56,11 @@ class ClassifierUserPredictor(UserPredictorBase):
                 classList = []
 
     def predictUsers(self, body, tags, fgen, n = 3):
-        featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+3, input_type = 'pair')
+        featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+4, input_type = 'pair')
         # document features
         featureVector = [(str(dim), value) for dim, value in fgen.getDocumentFeatures(body)]
         # additional features
+        featureVector.append(("Length", 1))
         featureVector.append(("Score", 1))
         featureVector.append(("Accepted", 1))
         featureVector.append(("OwnerRep", 1))
@@ -70,10 +73,11 @@ class ClassifierUserPredictor(UserPredictorBase):
         return [Users.get(Users.id == userId) for userId in userIds]
 
     def predictUserScore(self, body, tags, fgen, users):
-        featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+3, input_type = 'pair')
+        featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+4, input_type = 'pair')
         # document features
         featureVector = [(str(dim), value) for dim, value in fgen.getDocumentFeatures(body)]
         # additional features
+        featureVector.append(("Length", 1))
         featureVector.append(("Score", 1))
         featureVector.append(("Accepted", 1))
         featureVector.append(("OwnerRep", 1))
