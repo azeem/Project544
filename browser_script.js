@@ -6,10 +6,13 @@
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @require     https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
 // @grant       GM_xmlhttpRequest
+// @grant       GM_addStyle
 // ==/UserScript==
 
+GM_addStyle("#scroller {position: relative !important;}");
+
 var userPredTemplate = _.template([
-  "<div class='module'>",
+  "<div class='module newuser'>",
   "  <h4>Suggested Users</h4>",
   //"  <ul>",
   "    <% _.each(users, function(user) { %>",
@@ -32,8 +35,8 @@ var userPredTemplate = _.template([
 ].join("\n"));
 
 var simQuestionTemplate = _.template([
-  "<div class='module'>",
-  "  <h4>Similar Questions/h4>",
+  "<div class='module newuser'>",
+  "  <h4>Similar Questions</h4>",
   "  <ul>",
   "    <% _.each(questions, function(question) { %>",
   "        <li><%= question %></li>",
@@ -42,9 +45,6 @@ var simQuestionTemplate = _.template([
   "</div>"  
 ].join("\n"));
 
-
-var lastRequest1;
-var lastRequest2;
 var userPredDisplay;
 var simQuestionDisplay;
 
@@ -67,11 +67,7 @@ function showSimilarQuestions(response) {
 }
 
 $("#wmd-input").keypress(_.debounce(function() {
-  if(lastRequest1) {
-    lastRequest1.abort();
-  }
-  console.log("sending request 1");
-  lastRequest1 = GM_xmlhttpRequest({
+  GM_xmlhttpRequest({
     url: "http://127.0.0.1:5000/predictUsers",
     method: "POST",
     headers: {
@@ -88,11 +84,7 @@ $("#wmd-input").keypress(_.debounce(function() {
     }
   });
   
-  if(lastRequest2) {
-    lastRequest2.abort();
-  }
-  console.log("sending request 2");
-  lastRequest2 = GM_xmlhttpRequest({
+  GM_xmlhttpRequest({
     url: "http://127.0.0.1:5000/findSimilarQuestions",
     method: "POST",
     headers: {
