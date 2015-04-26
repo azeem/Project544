@@ -58,7 +58,7 @@ def predictUserScore():
 @app.route("/findSimilarQuestions", methods=["POST"])
 def findSimilarQuestions():
     document = request.form["document"]
-    simQuestions = qTm.findSimilarQuestions(self, document)
+    simQuestions = qTm.findSimilarQuestions(document)
     return jsonify(questions = simQuestions)
 
 if __name__ == "__main__":
