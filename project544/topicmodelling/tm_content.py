@@ -13,8 +13,9 @@ def getQuestions(savetofile=False):
         questionlist.append(postcontent)
         questions.append(Post.title)
 
-    with open(config.QUESTION_LIST, 'w') as fout:
-        pickle.dump(questions, fout)
+    if(savetofile):
+        with open(config.QUESTION_LIST, 'w') as fout:
+            pickle.dump(questions, fout)
 
     return questionlist
 
