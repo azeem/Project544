@@ -5,6 +5,9 @@ class FeatureGeneratorBase(object):
         """ Learns the model for the feature generator """
         raise NotImplementedError()
 
+    def getAnswerFeatures(self, answer):
+        raise NotImplementedError()
+
     """ Abstract base class for a feature generation system """
     def getDocumentFeatures(self, document, tags):
         """ Returns a list of tuples (int, float) representing the feature vector for document """

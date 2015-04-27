@@ -7,7 +7,7 @@ import peewee
 from .. import config
 from .. import util
 from ..base import UserPredictorBase
-from ..model import Posts, Users
+from ..model import Posts, Users, Tags, Tagpostmap
 
 class ClassifierUserPredictor(UserPredictorBase):
     def __init__(self, classifier=None, batchSize=1000):
@@ -34,7 +34,9 @@ class ClassifierUserPredictor(UserPredictorBase):
                 continue
             print("Generating feature vector for id {0}".format(answer.id))
             # docment features
-            featureVector = fgen.getDocumentFeatures(answer.parentid.title + answer.parentid.body + answer.body)
+            # featureVector = fgen.getDocumentFeatures(answer.parentid.title + answer.parentid.body + answer.body, tagIds)
+            featureVector = fgen.getAnswerFeatures(answer)
+
             featureVector = [(str(dim), value) for dim, value in featureVector]
             # additional features
             maxScore = Posts.select(peewee.fn.Max(Posts.score)).where(Posts.parentid == answer.parentid).scalar()
@@ -55,10 +57,11 @@ class ClassifierUserPredictor(UserPredictorBase):
                 featureMatrix = []
                 classList = []
 
+
     def predictUsers(self, body, tags, fgen, n = 3):
         featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+4, input_type = 'pair')
         # document features
-        featureVector = [(str(dim), value) for dim, value in fgen.getDocumentFeatures(body)]
+        featureVector = [(str(dim), value) for dim, value in fgen.getDocumentFeatures(body, tags)]
         # additional features
         featureVector.append(("Length", 1))
         featureVector.append(("Score", 1))
@@ -75,7 +78,7 @@ class ClassifierUserPredictor(UserPredictorBase):
     def predictUserScore(self, body, tags, fgen, users):
         featureHasher = FeatureHasher(n_features = fgen.getMaxDimSize()+4, input_type = 'pair')
         # document features
-        featureVector = [(str(dim), value) for dim, value in fgen.getDocumentFeatures(body)]
+        featureVector = [(str(dim), value) for dim, value in fgen.getDocumentFeatures(body, tags)]
         # additional features
         featureVector.append(("Length", 1))
         featureVector.append(("Score", 1))
@@ -91,13 +94,20 @@ def testLearn():
     tm = TopicModel()
     up = ClassifierUserPredictor()
     up.learn(tm)
-    file = open(config.USER_PREDICTOR, "w")
+    file = open(config.USER_PREDICTOR_TM, "w")
+    pickle.dump(up, file)
+
+    from project544.tag_feature_gen import TagFeatureGen
+    tg = TagFeatureGen()
+    up = ClassifierUserPredictor()
+    up.learn(tg)
+    file = open(config.USER_PREDICTOR_TG, "w")
     pickle.dump(up, file)
 
 def testPredict():
     from project544.util import stripTags
 
-    file = open(config.USER_PREDICTOR, "r")
+    file = open(config.USER_PREDICTOR_TM, "r")
     up = pickle.load(file)
     file.close()
 
