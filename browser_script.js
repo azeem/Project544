@@ -67,6 +67,10 @@ function showSimilarQuestions(response) {
 }
 
 $("#wmd-input").keypress(_.debounce(function() {
+  var tags = $(".post-tag").map(function() {
+    return $(this).text();
+  }).get().join(",");
+  console.log(tags);
   GM_xmlhttpRequest({
     url: "http://127.0.0.1:5000/predictUsers",
     method: "POST",
@@ -74,7 +78,7 @@ $("#wmd-input").keypress(_.debounce(function() {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: $.param({
-      "method": "topicmodel",
+      "tags": tags,
       "document": $("#wmd-preview").html()
     }),
     onload: function(response) {
