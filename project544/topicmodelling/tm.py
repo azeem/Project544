@@ -29,7 +29,7 @@ class TopicModel(FeatureGeneratorBase):
         return model
 
     def getAnswerFeatures(self, answer):
-        return self.getDocumentFeatures(answer.parentid.title + " " + answer.parentid.body + " " + answer.body)
+        return self.getDocumentFeatures(answer.parentid.title + " " + answer.parentid.body + " " + answer.body, None)
         
     def getDocumentFeatures(self, document, tags):
         document_model = None

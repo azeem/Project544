@@ -4,6 +4,9 @@ from project544.base import FeatureGeneratorBase
 from project544.model import Posts, Tags, database
 
 class TagFeatureGen(FeatureGeneratorBase):
+    def __init__(self):
+        self.maxDimSize = None
+
     def getAnswerFeatures(self, answer):
         sql = """
             select tagCounts.TagId,
@@ -45,4 +48,6 @@ class TagFeatureGen(FeatureGeneratorBase):
         return [(tagId, 1) for tagId in self.getTagIds(tags)]
 
     def getMaxDimSize(self):
-        return Tags.select(fn.count(Tags.id)).scalar()
+        if self.maxDimSize is None:
+            self.maxDimSize = Tags.select(fn.count(Tags.id)).scalar()
+        return self.maxDimSize

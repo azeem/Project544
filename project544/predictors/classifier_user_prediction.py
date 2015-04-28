@@ -19,10 +19,12 @@ class ClassifierUserPredictor(UserPredictorBase):
         self.batchSize = 1000
 
     def learn(self, fgen, postLimit=None):
-        query = Posts.select().where(Posts.posttypeid == 2)
+        Parent = Posts.alias()
+        query = Posts.select().join(Parent, on=(Posts.parentid == Parent.id)).where(Posts.posttypeid == 2 & Parent.forevaluation == 0)
         if postLimit is not None:
             query = query.limit(postLimit)
         count = query.count()
+        print("Learning {0} questions".format(count))
 
         allClasses = numpy.array([user.id for user in Users.select()])
 
@@ -72,8 +74,8 @@ class ClassifierUserPredictor(UserPredictorBase):
 
         X = featureHasher.transform([[(str(dim), value) for dim, value in featureVector]])
         userIds = [int(self.cf.classes_[index]) for index, score in sorted(enumerate(self.cf.decision_function(X)[0]), key=lambda x:x[1], reverse=True)][:n]
-        print(userIds)
-        print(self.cf.predict(X))
+        # print(userIds)
+        # print(self.cf.predict(X))
 
         return [Users.get(Users.id == userId) for userId in userIds]
 
@@ -92,24 +94,93 @@ class ClassifierUserPredictor(UserPredictorBase):
         return scores
 
 def testLearn():
-    from project544.topicmodelling.tm import TopicModel
-    tm = TopicModel()
-    up = ClassifierUserPredictor()
-    up.learn(tm)
-    file = open(config.USER_PREDICTOR_TM, "w")
-    pickle.dump(up, file)
+    # from project544.topicmodelling.tm import TopicModel
+    # tm = TopicModel()
+    # up = ClassifierUserPredictor()
+    # up.learn(tm)
+    # file = open(config.USER_PREDICTOR_TM, "w")
+    # pickle.dump(up, file)
+    # file.close()
 
-    from project544.tag_feature_gen import TagFeatureGen
-    tg = TagFeatureGen()
+    # from project544.tag_feature_gen import TagFeatureGen
+    # tg = TagFeatureGen()
+    # up = ClassifierUserPredictor()
+    # up.learn(tg)
+    # file = open(config.USER_PREDICTOR_TG, "w")
+    # pickle.dump(up, file)
+    # file.close()
+
+    from project544.tag_tm_feature_gen import TagTMFeatureGen
+    tg = TagTMFeatureGen()
     up = ClassifierUserPredictor()
     up.learn(tg)
-    file = open(config.USER_PREDICTOR_TG, "w")
+    file = open(config.USER_PREDICTOR_TGTM, "w")
     pickle.dump(up, file)
+    file.close()
+
+def findNDCG(rel):
+    dcg = 0
+    for i, r in enumerate(rel):
+       dcg += (math.pow(2, r)-1)/math.log(i+1, 2)
+
+    idcg = 0
+    for i, r in enumerate(sorted(rel, reverse=True)):
+       idcg += (math.pow(2, r)-1)/math.log(i+1, 2)
+
+    return dcg/idcg
+
+def testPredictEval():
+    file = open(config.USER_PREDICTOR_TM, "r")
+    up = pickle.load(file)
+    file.close()
+
+    from project544.topicmodelling.tm import TopicModel
+    from project544.tag_feature_gen import TagFeatureGen
+    tgen = TopicModel()
+    # tgen = TagFeatureGen()
+    kSet = (1, 5, 10, 20, 100)
+
+    query = Posts.select().where((Posts.posttypeid == 1) & (Posts.forevaluation == 1) & (Posts.answercount >= 2))
+    pak = dict((k,0) for k in kSet)
+    mrr = 0
+    for question in query:
+        tags = util.getTagList(question.tags)
+        predictions = [user.id for user in up.predictUsers(question.body, tags, tgen, n = max(kSet))]
+        answers = Posts.select().where((Posts.posttypeid == 2) & (Posts.parentid == question.id))
+        answerUserIds = [ans.owneruserid.id  for ans in answers if ans.owneruserid is not None and ans.score > 0]
+
+        
+        for i, userId in enumerate(predictions):
+            if userId in answerUserIds:
+                mrr += 1/float(i+1)
+                break
+
+        pakpq = dict((k,0) for k in kSet)
+        for k in kSet:
+            present = False
+            for userId in answerUserIds:
+                if userId in predictions[:k]:
+                    pak[k] += 1
+                    pakpq[k] += 1
+
+        # userAnswerMap = dict((ans.owneruserid.id, ans) for ans in answers if ans.owneruserid is not None and ans.score > 0)
+        # for k in kSet:
+        #     rel = [userAnswerMap[userId].score for userId in predictions[:k] if userId in userAnswerMap]
+
+        print("PAK per question for {0} = {1}".format(question.id, repr(pakpq)))
+
+    # normalize
+    queryCount = query.count()
+    mrr /= queryCount
+    pak = [(k, count/float(k*queryCount)) for k, count in pak.items()]
+    print(queryCount)
+    print(pak)
+    print(mrr)
 
 def testPredict():
     from project544.util import stripTags
 
-    file = open(config.USER_PREDICTOR_TM, "r")
+    file = open(config.USER_PREDICTOR_TG, "r")
     up = pickle.load(file)
     file.close()
 
@@ -117,7 +188,9 @@ def testPredict():
         test_set = pickle.load(fin)
 
     from project544.topicmodelling.tm import TopicModel
+    from project544.tag_feature_gen import TagFeatureGen
     tm = TopicModel()
+    # tm = TagFeatureGen()
 
     #query = Posts.select().where((Posts.posttypeid == 1) & (Posts.id > 7000)).limit(5)
     total_num_mismatches = 0
@@ -130,7 +203,8 @@ def testPredict():
     query = Posts.select().where(Posts.id << test_set) 
     for question in query:
         print("*"*80)
-        users = up.predictUsers(question.body, None, tm, n = 10)
+        tags = util.getTagList(question.tags)
+        users = up.predictUsers(question.body, tags, tm, n = 10)
         answers = Posts.select().where((Posts.posttypeid == 2) & (Posts.parentid == question.id))
 
         user_vote_list = []     # List of tuple (score, user_id)
@@ -144,9 +218,7 @@ def testPredict():
         user_vote_list = util.removeDuplicateUsers(util.sortByVal(user_vote_list, True))
         user_ids = [tup[0] for tup in user_vote_list]
 
-        tags = util.getTagList(question.tags)
-
-        scores = up.predictUserScore(question.body, None, tm, user_ids)
+        scores = up.predictUserScore(question.body, tags, tm, user_ids)
         if (len(user_vote_list) != len(scores)):
             print("ERROR")
             print(question.id)
@@ -228,5 +300,5 @@ if __name__ == "__main__":
         if sys.argv[1] == "learn":
             testLearn()
         else:
-            testPredict()
+            testPredictEval()
 
