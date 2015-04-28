@@ -3,6 +3,8 @@ from sklearn.feature_extraction import FeatureHasher
 import numpy
 import pickle
 import peewee
+import scipy
+import math
 
 from .. import config
 from .. import util
@@ -108,6 +110,8 @@ def testPredict():
     total_mismatch_dist = 0
     total_score = 0
     total_users_predicted = 0
+    total_spearman_coeff = 0
+    total_nan_count  = 0
 
     query = Posts.select().where(Posts.id << test_set) 
     for question in query:
@@ -140,10 +144,24 @@ def testPredict():
         
         num_mismatches = util.getNumOrderMismatches(user_vote_list, user_score_list)
         mismatch_dist = util.getListMismatchDistance(user_vote_list, user_score_list)
-        
+
         total_num_mismatches += num_mismatches
         total_mismatch_dist += mismatch_dist
-        
+
+        #vote_vals = [tup[1] for tup in user_vote_list]
+        #score_vals = [(-1 * scores[i]) for i in range(len(user_vote_list))]
+
+        vote_vals, score_vals = util.getRankLists(user_vote_list, user_score_list)
+
+        spearman_val = scipy.stats.spearmanr(vote_vals, score_vals)
+        if math.isnan(spearman_val[0]):
+            #print("NAN!!!")
+            #print vote_vals
+            #print score_vals
+            total_nan_count += 1
+        else:
+            total_spearman_coeff += spearman_val[0]
+
         print("Top predictions for Post {0}".format(question.id))
         print("-------------------------")
         print(stripTags(question.title).encode('utf-8'))
@@ -166,8 +184,10 @@ def testPredict():
         print("")
         print("Num Mismatches: {0}".format(num_mismatches))
         print("Mismatch Dist (Total): {0}".format(mismatch_dist))
+        print("Spearman Coeff: {0}".format(spearman_val[0]))
         print("")
         print("*"*80)
+
     if total_users_predicted > 0:
         total_questions = query.count()
         print("")
@@ -175,6 +195,7 @@ def testPredict():
         print("Average Num Mismatches: {0}".format(total_num_mismatches / total_questions))
         print("Average mismatch dist per question: {0}".format(total_mismatch_dist / total_questions))
         print("Average mismatch dist per user: {0}".format(total_mismatch_dist / total_users_predicted))
+        print("Average Spearman coeff: {0}".format(total_spearman_coeff / (total_questions - total_nan_count)))
         print("Average score: {0}".format(total_score / total_users_predicted))
     #query = Posts.select().where((Posts.posttypeid == 1) & (Posts.id > 6000)).limit(5)
     #for question in query:

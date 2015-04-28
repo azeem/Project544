@@ -98,6 +98,20 @@ def getListMismatchDistance(user_vote_list, user_score_list):
 
     return mismatchDist
 
+def getRankLists(user_vote_list, user_score_list):
+    users_sorted_vote = [tup[0] for tup in user_vote_list]
+    users_sorted_score = [tup[0] for tup in user_score_list]
+
+    vote_rank = []
+    score_rank = []
+
+    for i1, user_id in enumerate(users_sorted_vote):
+        i2 = users_sorted_score.index(user_id)
+        vote_rank.append(i1 + 1)
+        score_rank.append(i2 + 1)
+
+    return (vote_rank, score_rank)
+
 def removeDuplicateUsers(user_vote_list):
     user_hash = {}
     tup_list = []
