@@ -28,7 +28,10 @@ class TopicModel(FeatureGeneratorBase):
             model = models.LdaModel.load(modelfile)
         return model
 
-    def getDocumentFeatures(self, document):
+    def getAnswerFeatures(self, answer):
+        return self.getDocumentFeatures(answer.parentid.title + " " + answer.parentid.body + " " + answer.body)
+        
+    def getDocumentFeatures(self, document, tags):
         document_model = None
         if(document!=None and len(document)>1):
             documenttext = tm_util.preprocessDocs([tm_util.preprocessPost(document)], self.stoplist)
@@ -38,11 +41,11 @@ class TopicModel(FeatureGeneratorBase):
 
     def getUserFeatures(self, userid):
         userdocument = tm_content.getUserAnswers(userid)
-        user_features = self.getDocumentFeatures(userdocument)
+        user_features = self.getDocumentFeatures(userdocument, None)
         return user_features
 
     def findSimilarDocs(self, document, n=10):
-        document_model = self.getDocumentFeatures(document)
+        document_model = self.getDocumentFeatures(document, None)
         sims = self.index[document_model]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
         return sims[:n]
