@@ -15,8 +15,8 @@ class TagTMFeatureGen(FeatureGeneratorBase):
 
     def getDocumentFeatures(self, document, tags):
         print("Combining features for document")
-        tmFeatures = self.tm.getDocumentFeatures(answer, tags)
-        tgFeatures = [(key+10+self.tm.getMaxDimSize(), value) for key, value in self.tg.getDocumentFeatures(answer, tags)]
+        tmFeatures = self.tm.getDocumentFeatures(document, tags)
+        tgFeatures = [(key+10+self.tm.getMaxDimSize(), value) for key, value in self.tg.getDocumentFeatures(document, tags)]
         return tmFeatures + tgFeatures
 
     def getMaxDimSize(self):
