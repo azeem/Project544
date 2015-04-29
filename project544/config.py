@@ -25,6 +25,6 @@ USER_PREDICTOR_TM   = "./out/userpredictor.mm"
 USER_PREDICTOR_TG   = "./out/userpredictorTags.mm"
 USER_PREDICTOR_TGTM   = "./out/userpredictorTagsTm.mm"
 TOPICMODEL_METHOD   = "lda"
-NUM_TOPICS_LDA      = 40
+NUM_TOPICS_LDA      = 50
 VISUALIZATION_FOLDER= "./out/viz"
 TEST_SET            = "./out/testset"

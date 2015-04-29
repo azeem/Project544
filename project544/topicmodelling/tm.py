@@ -84,5 +84,6 @@ class QuestionTopicModel(TopicModel):
         sims = self.findSimilarDocs(question, n)
         similar = []
         for sim in sims:
-            similar.append(self.questions[sim[0]].encode('utf-8'))
+            q = self.questions[sim[0]]
+            similar.append((q[0], q[1].encode('utf-8')))
         return similar
