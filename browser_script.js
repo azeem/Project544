@@ -39,7 +39,7 @@ var simQuestionTemplate = _.template([
   "  <h4>Similar Questions</h4>",
   "  <ul>",
   "    <% _.each(questions, function(question) { %>",
-  "        <li><%= question %></li>",
+  "        <li><a href='/questions/<%= question[0] %>'><%= question[1] %></a></li>",
   "    <% }); %>",
   "  </ul>",
   "</div>"  
