@@ -129,17 +129,7 @@ def findNDCG(rel):
 
     return dcg/idcg
 
-def testPredictEval():
-    file = open(config.USER_PREDICTOR_TM, "r")
-    up = pickle.load(file)
-    file.close()
-
-    from project544.topicmodelling.tm import TopicModel
-    from project544.tag_feature_gen import TagFeatureGen
-    tgen = TopicModel()
-    # tgen = TagFeatureGen()
-    kSet = (1, 5, 10, 20, 100)
-
+def testPredictEval(up, tgen, kSet):
     query = Posts.select().where((Posts.posttypeid == 1) & (Posts.forevaluation == 1) & (Posts.answercount >= 2))
     pak = dict((k,0) for k in kSet)
     mrr = 0
@@ -173,9 +163,67 @@ def testPredictEval():
     queryCount = query.count()
     mrr /= queryCount
     pak = [(k, count/float(k*queryCount)) for k, count in pak.items()]
-    print(queryCount)
-    print(pak)
-    print(mrr)
+    return (pak, mrr)
+
+def plot(results, kSets, colors, order=None):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    if order is None:
+        order = results.keys()
+
+    ind = np.arange(len(kSets))
+    indMrr = np.arange(len(results))
+    barWidth = 0.20
+
+    figPak, axPak = plt.subplots()
+    figMrr, axMrr = plt.subplots()
+
+    axPak.set_xticks(ind + (barWidth*len(results)/float(2)))
+    axPak.set_xticklabels(["k={0}".format(k) for k in kSets])
+
+    axMrr.set_xticks(indMrr)
+    axMrr.set_xticklabels(order)
+    # figMrr, axMrr = plt.subplots()
+    rectsPak = {}
+    # rectsMrr = {}
+    for i, name in enumerate(order):
+        pak, mrr = results[name]
+        rectsPak[name] = axPak.bar(ind + i*barWidth, [pak[k] for k in kSets], barWidth, color=colors[i])
+
+    axMrr.bar(indMrr, [results[name][1] for name in order], barWidth, align="center", color=colors[1])
+    plt.xlim([min(indMrr)-0.5, max(indMrr)+0.5])
+    # for i, (name, (pak, mrr)) in enumerate(results.items()):
+    #     rectsPak[name] = axPak.bar(ind + i*barWidth, [pak[k] for k in kSets], barWidth, color=colors[i])
+
+    legendLabels = order
+    axPak.legend( [rectsPak[label] for label in legendLabels], legendLabels )
+    plt.show()
+        
+
+def evaluate():
+    from project544.topicmodelling.tm import TopicModel
+    from project544.tag_feature_gen import TagFeatureGen
+    from project544.tag_tm_feature_gen import TagTMFeatureGen
+    tgen = TagTMFeatureGen()
+    # tgen = TopicModel()
+    # tgen = TagFeatureGen()
+    methods = {
+        "Topic Modelling": (config.USER_PREDICTOR_TM, TopicModel),
+        "Post Tags": (config.USER_PREDICTOR_TG, TagFeatureGen),
+        "Combined": (config.USER_PREDICTOR_TGTM, TagTMFeatureGen)
+    }
+    kSet = (1, 5, 10, 20, 50, 100)
+    results = {}
+    for name, (upFilename, tgenClass) in methods.items():
+        print("Evaluating {0} with kSet={1}".format(name, repr(kSet)))
+        file = open(upFilename, "r")
+        up = pickle.load(file)
+        file.close()
+        tgen = tgenClass()
+        results[name] = testPredictEval(up, tgen, kSet)
+    plot(results, kSet, ("#05337D", "#CC405D", "#F2BB77"), order=("Tag Generator", "TM Generator", "Combined"))
+        
 
 def testPredict():
     from project544.util import stripTags
@@ -291,7 +339,20 @@ def testPredict():
     #    print("User Scores for Post {0}".format(question.id))
     #    print("\n".join("{0}({1})".format(user.displayname, score) for user, score in zip(users, scores)))
     #    print("")
-
+RESULTS = {
+    "Tag Generator": (
+	dict([(1, 0.188), (10, 0.045), (20, 0.02525), (5, 0.0786), (100, 0.00603)]),
+	0.26780247855
+    ),
+    "TM Generator": (
+	dict([(1, 0.084), (10, 0.0278), (20, 0.01665), (5, 0.0472), (100, 0.00388)]),
+	0.144174681867
+    ),
+    "Combined": (
+	dict([(1, 0.186), (10, 0.0492), (20, 0.0266), (5, 0.0856), (100, 0.00653)]),
+	0.276254813686
+    )
+}
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 2:
@@ -300,5 +361,6 @@ if __name__ == "__main__":
         if sys.argv[1] == "learn":
             testLearn()
         else:
-            testPredictEval()
+            # testPredictEval()
+            evaluate()
 
