@@ -3,15 +3,18 @@ from ..model import Posts
 from .. import config
 import tm_util
 
-def getQuestions(savetofile=False):
+def getQuestions(savetofile=False, min20words=False):
     questionlist = []
     questions = []
 
     for Post in Posts.select().where(Posts.posttypeid==1):
         post = Post.title + ' ' + Post.body
         postcontent = tm_util.preprocessPost(post)
+        if(min20words==True):
+            if(len(postcontent)<20):
+                continue
         questionlist.append(postcontent)
-        questions.append(Post.title)
+        questions.append((Post.id, Post.title))
 
     if(savetofile):
         with open(config.QUESTION_LIST, 'w') as fout:

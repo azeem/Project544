@@ -9,11 +9,12 @@ import tm_content
 
 class TopicModel(FeatureGeneratorBase):
 
-    def __init__(self, modelfile=config.CURRENT_MODEL, indexfile=config.CURRENT_INDEX, method=config.TOPICMODEL_METHOD):
+    def __init__(self, modelfile=config.CURRENT_MODEL, indexfile=config.CURRENT_INDEX, method=config.TOPICMODEL_METHOD, corpus=config.COMBINED):
         stoplist = open(config.STOPLIST, 'r')
         self.stoplist = set([word.rstrip('\n') for word in stoplist])
         stoplist.close()
-
+        self.corpus = corpora.MmCorpus(corpus)
+        self.tfidf = models.TfidfModel(self.corpus)
         self.dictionary = self.loadDictionary()
         self.model = self.loadTopicModel(modelfile, method)
         self.index = similarities.MatrixSimilarity.load(indexfile)
@@ -30,13 +31,14 @@ class TopicModel(FeatureGeneratorBase):
 
     def getAnswerFeatures(self, answer):
         return self.getDocumentFeatures(answer.parentid.title + " " + answer.parentid.body + " " + answer.body, None)
-        
+
     def getDocumentFeatures(self, document, tags):
         document_model = None
         if(document!=None and len(document)>1):
             documenttext = tm_util.preprocessDocs([tm_util.preprocessPost(document)], self.stoplist)
             document_bow = self.dictionary.doc2bow(documenttext[0])
-            document_model = self.model[document_bow]
+            document_tfidf = self.tfidf[document_bow]
+            document_model = self.model[document_tfidf]
         return document_model
 
     def getUserFeatures(self, userid):
@@ -72,7 +74,7 @@ class TopicModel(FeatureGeneratorBase):
 
 class QuestionTopicModel(TopicModel):
 
-    def __init__(self, modelfile=config.QUESTION_MODEL, indexfile=config.QUESTION_INDEX, method=config.TOPICMODEL_METHOD):
+    def __init__(self, modelfile=config.QUESTION_MODEL, indexfile=config.QUESTION_INDEX, method=config.TOPICMODEL_METHOD, corpus=config.QUESTIONS):
         super(QuestionTopicModel, self).__init__(modelfile, indexfile, method)
         self.questions = None
         with open(config.QUESTION_LIST, 'r') as fin:
