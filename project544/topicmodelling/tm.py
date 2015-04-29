@@ -18,6 +18,7 @@ class TopicModel(FeatureGeneratorBase):
         self.dictionary = self.loadDictionary()
         self.model = self.loadTopicModel(modelfile, method)
         self.index = similarities.MatrixSimilarity.load(indexfile)
+        self.method = method
 
     def loadDictionary(self, dictionaryfile=config.DICTIONARY):
         return corpora.Dictionary.load(dictionaryfile)
@@ -35,10 +36,16 @@ class TopicModel(FeatureGeneratorBase):
     def getDocumentFeatures(self, document, tags):
         document_model = None
         if(document!=None and len(document)>1):
+            print 'Reached 1'
             documenttext = tm_util.preprocessDocs([tm_util.preprocessPost(document)], self.stoplist)
             document_bow = self.dictionary.doc2bow(documenttext[0])
+            print 'Reached 2'
             document_tfidf = self.tfidf[document_bow]
-            document_model = self.model[document_tfidf]
+            if(self.method=='lda'):
+                document_model = self.model[document_tfidf]
+            elif(self.method=='lda_mallet'):
+                print 'Reached 3'
+                document_model = self.model[document_bow]
         return document_model
 
     def getUserFeatures(self, userid):
@@ -74,9 +81,10 @@ class TopicModel(FeatureGeneratorBase):
 
 class QuestionTopicModel(TopicModel):
 
-    def __init__(self, modelfile=config.QUESTION_MODEL, indexfile=config.QUESTION_INDEX, method=config.TOPICMODEL_METHOD, corpus=config.QUESTIONS):
+    def __init__(self, modelfile=config.QUESTION_MODEL, indexfile=config.QUESTION_INDEX, method='lda_mallet', corpus=config.QUESTIONS):
         super(QuestionTopicModel, self).__init__(modelfile, indexfile, method)
         self.questions = None
+        self.method = method
         with open(config.QUESTION_LIST, 'r') as fin:
             self.questions = pickle.load(fin)
 
@@ -86,4 +94,5 @@ class QuestionTopicModel(TopicModel):
         for sim in sims:
             q = self.questions[sim[0]]
             similar.append((q[0], q[1].encode('utf-8')))
+        print similar
         return similar

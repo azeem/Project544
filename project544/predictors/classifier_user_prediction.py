@@ -139,7 +139,7 @@ def testPredictEval(up, tgen, kSet):
         answers = Posts.select().where((Posts.posttypeid == 2) & (Posts.parentid == question.id))
         answerUserIds = [ans.owneruserid.id  for ans in answers if ans.owneruserid is not None and ans.score > 0]
 
-        
+
         for i, userId in enumerate(predictions):
             if userId in answerUserIds:
                 mrr += 1/float(i+1)
@@ -199,7 +199,7 @@ def plot(results, kSets, colors, order=None):
     legendLabels = order
     axPak.legend( [rectsPak[label] for label in legendLabels], legendLabels )
     plt.show()
-        
+
 
 def evaluate():
     from project544.topicmodelling.tm import TopicModel
@@ -223,7 +223,7 @@ def evaluate():
         tgen = tgenClass()
         results[name] = testPredictEval(up, tgen, kSet)
     plot(results, kSet, ("#05337D", "#CC405D", "#F2BB77"), order=("Tag Generator", "TM Generator", "Combined"))
-        
+
 
 def testPredict():
     from project544.util import stripTags
@@ -248,7 +248,7 @@ def testPredict():
     total_spearman_coeff = 0
     total_nan_count  = 0
 
-    query = Posts.select().where(Posts.id << test_set) 
+    query = Posts.select().where(Posts.id << test_set)
     for question in query:
         print("*"*80)
         tags = util.getTagList(question.tags)
@@ -272,10 +272,10 @@ def testPredict():
             print(question.id)
             print(user_vote_list)
             print(scores)
-        
+
         user_score_list = [(user_vote_list[i][0], scores[i]) for i in range(len(user_vote_list))]
         user_score_list = util.sortByVal(user_score_list)
-        
+
         num_mismatches = util.getNumOrderMismatches(user_vote_list, user_score_list)
         mismatch_dist = util.getListMismatchDistance(user_vote_list, user_score_list)
 

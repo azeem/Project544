@@ -87,10 +87,11 @@ class TopicModelGen:
         corpus_tfidf = tfidf[corpus]
 
         if(method=='lda_mallet'):
-            model = models.wrappers.LdaMallet(config.MALLET_PATH, corpus_tfidf, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
+            model = models.wrappers.LdaMallet(config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
+            index = similarities.MatrixSimilarity(model[corpus])
         elif(method=='lda'):
             model = models.LdaModel(corpus_tfidf, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
-        index = similarities.MatrixSimilarity(model[corpus_tfidf])
+            index = similarities.MatrixSimilarity(model[corpus_tfidf])
         model.save(modelfile)
         index.save(indexfile)
         print 'Topic Model ' + modelfile + ' created.'
