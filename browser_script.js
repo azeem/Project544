@@ -9,7 +9,7 @@
 // @grant       GM_addStyle
 // ==/UserScript==
 
-GM_addStyle("#scroller {position: relative !important;}");
+GM_addStyle("#scroller {position: relative !important;} #how-to-format {display: none !important;}");
 
 var userPredTemplate = _.template([
   "<div class='module newuser'>",
@@ -48,13 +48,15 @@ var simQuestionTemplate = _.template([
 var userPredDisplay;
 var simQuestionDisplay;
 
+$("#scroller").prepend("<span id='user-pred-container'></span><span id='simq-container'></span>");
+
 function showPredictions(response) {
   data = JSON.parse(response.responseText);
   if(userPredDisplay) {
     userPredDisplay.remove();
   }
   userPredDisplay = $(userPredTemplate(data));
-  $("#scroller").prepend(userPredDisplay);
+  $("#user-pred-container").prepend(userPredDisplay);
 }
 
 function showSimilarQuestions(response) {
@@ -63,7 +65,7 @@ function showSimilarQuestions(response) {
     simQuestionDisplay.remove();
   }
   simQuestionDisplay = $(simQuestionTemplate(data));
-  $("#scroller").prepend(simQuestionDisplay);
+  $("#simq-container").prepend(simQuestionDisplay);
 }
 
 $("#wmd-input").keypress(_.debounce(function() {
