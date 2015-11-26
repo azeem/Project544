@@ -167,4 +167,4 @@ if __name__ == '__main__':
  if len(sys.argv) != 2:
   print("Usage: python stackexchange_importer.py DATA_DIRECTORY")
  filenames = [key for key in ANATHOMY.keys() if key not in ("Tags", "TagPostMap")]
- dump_files(filenames, ANATHOMY, data_path = sys.argv[1], part=30)
+ dump_files(filenames, ANATHOMY, data_path = sys.argv[1], part=None)

@@ -3,9 +3,9 @@ import pickle
 import random
 import sys
 
-def main(test_file):
+def main():
     min_answers = 2
-    test_set_length = 500
+    test_set_length = 1000
 
     questions = Posts.select().where((Posts.posttypeid == 1))
     answers = Posts.select().where((Posts.posttypeid == 2))
@@ -23,6 +23,7 @@ def main(test_file):
     print "Count (All questions): " + str(all_questions.count())
     print "Count (All questions with accepted answers): " + str(all_questions_accepted_answer.count())
     print "Count (All questions with answers (min %d): " % min_answers + str(all_questions_answers.count())
+    print "Number of samples = {0}".format(test_set_length)
 
     question_ids = []
     for Post in all_questions_answers:
@@ -30,12 +31,11 @@ def main(test_file):
 
     random.shuffle(question_ids)
     question_ids = question_ids[:test_set_length]
+    for questionId in question_ids:
+        print("Setting forevaluation for question {0}".format(questionId))
+        q = Posts.update(forevaluation = 1).where(Posts.id == questionId)
+        q.execute()
    
-    with open(test_file, 'w') as fout:
-        pickle.dump(question_ids, fout)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage:", sys.argv[0], "/path/to/test_file")
-    else:
-        main(sys.argv[1])
+        main()

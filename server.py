@@ -8,6 +8,7 @@ from project544.predictors.classifier_user_prediction import ClassifierUserPredi
 from project544.predictors.topicmodel_prediction import TopicModelPredictor
 from project544.topicmodelling.tm import QuestionTopicModel
 from project544.tag_feature_gen import TagFeatureGen
+from project544.tag_tm_feature_gen import TagTMFeatureGen
 from project544 import config
 from project544.topicmodelling.tm import TopicModel
 
@@ -63,8 +64,10 @@ def findSimilarQuestions():
 
 if __name__ == "__main__":
 
-    fgen = TopicModel()
-    file = open(config.USER_PREDICTOR_TM, "r")
+    # fgen = TopicModel()
+    fgen = TagTMFeatureGen()
+    # file = open(config.USER_PREDICTOR_TM, "r")
+    file = open(config.USER_PREDICTOR_TGTM, "r")
     predictor = pickle.load(file)
     file.close()
 

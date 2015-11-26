@@ -53,7 +53,7 @@ class TopicModelGen:
             print 'Corpus at ' + questioncorpusfile + ' aldready exists'
             return
 
-        questionlist = tm_content.getQuestions(savetofile=True)
+        questionlist = tm_content.getQuestions(savetofile=True, min20words=True)
         self.createCorpus(questionlist, questioncorpusfile)
 
     def createAnswerCorpus(self, answercorpusfile=config.ANSWERS):
@@ -83,11 +83,15 @@ class TopicModelGen:
 
         if(self.dictionary == None):
             self.loadDictionary()
+        tfidf = models.TfidfModel(corpus)
+        corpus_tfidf = tfidf[corpus]
+
         if(method=='lda_mallet'):
             model = models.wrappers.LdaMallet(config.MALLET_PATH, corpus, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
+            index = similarities.MatrixSimilarity(model[corpus])
         elif(method=='lda'):
-            model = models.LdaModel(corpus, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
-        index = similarities.MatrixSimilarity(model[corpus])
+            model = models.LdaModel(corpus_tfidf, id2word=self.dictionary, num_topics=config.NUM_TOPICS_LDA)
+            index = similarities.MatrixSimilarity(model[corpus_tfidf])
         model.save(modelfile)
         index.save(indexfile)
         print 'Topic Model ' + modelfile + ' created.'
