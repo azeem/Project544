@@ -1,4 +1,4 @@
-from .model import Posts
+from .model import Posts, Users, Tags
 import pickle
 import random
 import sys
@@ -6,6 +6,16 @@ import sys
 def main(test_file):
     min_answers = 2
     test_set_length = 500
+
+    questions = Posts.select().where((Posts.posttypeid == 1))
+    answers = Posts.select().where((Posts.posttypeid == 2))
+    users = Users.select()
+    tags = Tags.select()
+    print questions.count()
+    print answers.count()
+    print users.count()
+    print tags.count()
+    return
 
     all_questions = Posts.select().where(Posts.posttypeid == 1)
     all_questions_accepted_answer = Posts.select().where((Posts.posttypeid == 1) & (Posts.acceptedanswerid.is_null(False)))
